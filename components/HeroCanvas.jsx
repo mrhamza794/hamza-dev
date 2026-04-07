@@ -2,8 +2,7 @@
 
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Float, PerspectiveCamera, MeshDistortMaterial, Sphere, TorusKnot, Icosahedron } from "@react-three/drei";
-import { EffectComposer, Bloom, Noise, ChromaticAberration } from "@react-three/postprocessing";
+import { PerspectiveCamera, Dodecahedron, Float, Stats } from "@react-three/drei";
 import * as THREE from "three";
 
 const ParticleSystem = ({ count = 500 }) => {
@@ -58,8 +57,7 @@ const ParticleSystem = ({ count = 500 }) => {
 
 const Scene = ({ mouse }) => {
   const groupRef = useRef();
-  const torusRef = useRef();
-  const icoRef = useRef();
+  const dodecahedronRef = useRef();
   const { viewport } = useThree();
 
   useFrame((state) => {
@@ -74,62 +72,42 @@ const Scene = ({ mouse }) => {
       groupRef.current.rotation.y = time * 0.15;
     }
 
-    if (torusRef.current) {
-      torusRef.current.rotation.y += 0.002;
-    }
-
-    if (icoRef.current) {
-      icoRef.current.position.x = Math.sin(time) * 2;
-      icoRef.current.position.z = Math.cos(time) * 2;
-      icoRef.current.rotation.x += 0.01;
-      icoRef.current.rotation.y += 0.01;
+    if (dodecahedronRef.current) {
+      dodecahedronRef.current.rotation.y += 0.002;
     }
   });
 
   return (
     <group ref={groupRef}>
-      {/* Primary Torus Knot */}
       <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-        <TorusKnot ref={torusRef} args={[1, 0.3, 128, 32]}>
-          <meshPhysicalMaterial
-            color="#8B5CF6"
-            metalness={0.8}
-            roughness={0.2}
-            transmission={0.1}
-            thickness={0.5}
-            emissive="#8B5CF6"
-            emissiveIntensity={0.3}
-          />
-        </TorusKnot>
+        <Dodecahedron ref={dodecahedronRef} args={[1.5, 0]}>
+          <meshBasicMaterial color="#8B5CF6" wireframe />
+        </Dodecahedron>
       </Float>
-
-      {/* Orbiting Icosahedron */}
-      <Icosahedron ref={icoRef} args={[0.3, 0]}>
-        <meshPhysicalMaterial color="#EC4899" emissive="#EC4899" emissiveIntensity={1} />
-      </Icosahedron>
-
-      {/* Outer Wireframe Sphere */}
-      <Sphere args={[3, 32, 32]}>
-        <meshBasicMaterial color="#06B6D4" wireframe transparent opacity={0.1} />
-      </Sphere>
     </group>
   );
 };
 
 const HeroCanvas = () => {
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
-  const [particleCount, setParticleCount] = useState(500);
+  const [particleCount, setParticleCount] = useState(50); // Heavily reduced default count
 
   useEffect(() => {
+    let timeoutId;
     const handleMouseMove = (e) => {
-      setMouse({
-        x: (e.clientX / window.innerWidth) * 2 - 1,
-        y: -(e.clientY / window.innerHeight) * 2 + 1,
-      });
+      // Debounce logic (throttle to ~60fps equivalent interaction)
+      if(timeoutId) return;
+      timeoutId = setTimeout(() => {
+        setMouse({
+          x: (e.clientX / window.innerWidth) * 2 - 1,
+          y: -(e.clientY / window.innerHeight) * 2 + 1,
+        });
+        timeoutId = null;
+      }, 16);
     };
 
     const handleResize = () => {
-      setParticleCount(window.innerWidth < 768 ? 100 : 500);
+      setParticleCount(window.innerWidth < 768 ? 20 : 50);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -139,26 +117,21 @@ const HeroCanvas = () => {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
+      if(timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <Canvas dpr={[1, 2]}>
+      <Canvas dpr={[1, 1.5]}>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
         <ambientLight intensity={0.5} color="#8B5CF6" />
-        <pointLight position={[10, 10, 10]} color="#3B82F6" intensity={1.5} />
-        <pointLight position={[-10, -10, -10]} color="#EC4899" intensity={1} />
-        <spotLight position={[0, 10, 0]} intensity={1} color="#06B6D4" angle={0.3} penumbra={1} />
+        <pointLight position={[10, 10, 10]} color="#3B82F6" intensity={1} />
         
         <Scene mouse={mouse} />
         <ParticleSystem count={particleCount} />
 
-        <EffectComposer disableNormalPass>
-          <Bloom luminanceThreshold={0.5} mipmapBlur intensity={0.8} radius={0.4} />
-          <Noise opacity={0.02} />
-          <ChromaticAberration offset={[0.0005, 0.0005]} />
-        </EffectComposer>
+        {process.env.NODE_ENV === 'development' && <Stats />}
       </Canvas>
     </div>
   );

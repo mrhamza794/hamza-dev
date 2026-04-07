@@ -8,55 +8,32 @@ import { User, Mail, MessageSquare, Send, CheckCircle, Copy, MapPin, Phone } fro
 import { PERSONAL_INFO } from "@/lib/constants";
 import * as THREE from "three";
 
-// 3D Paper Plane Geometry (Simplified representation of an envelope/plane)
-const PaperPlane = ({ formState }) => {
+// Simple Plane Geometry instead of complex mesh
+const PaperPlane = () => {
   const meshRef = useRef();
   
   useFrame((state, delta) => {
     if (!meshRef.current) return;
-    
-    // Default gentle float & rotation
-    if (formState === "idle" || formState === "error") {
-      meshRef.current.rotation.y += delta * 0.2;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime) * 0.1;
-    } 
-    // Fly towards user when interacting
-    else if (formState === "typing") {
-      meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, 0, 0.1);
-      meshRef.current.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.1);
-    } 
-    // Fly away on success
-    else if (formState === "success") {
-      meshRef.current.position.y += delta * 5;
-      meshRef.current.position.z -= delta * 5;
-      meshRef.current.rotation.x -= delta * 2;
-    }
+    meshRef.current.rotation.y += delta * 0.2;
+    meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime) * 0.1;
   });
 
   return (
     <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
       <mesh ref={meshRef}>
-        <coneGeometry args={[1, 3, 3]} />
-        <meshPhysicalMaterial 
-          color="#ffffff"
-          transmission={0.3}
-          metalness={0.1}
-          roughness={0.4}
-        />
+        <planeGeometry args={[3, 3]} />
+        <meshBasicMaterial color="#ffffff" wireframe />
       </mesh>
     </Float>
   );
 };
 
-const ContactCanvas = ({ formState }) => {
+const ContactCanvas = () => {
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
-      <Canvas>
+      <Canvas dpr={[1, 1.5]}>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-        <ambientLight intensity={0.6} />
-        <spotLight position={[5, 10, 5]} intensity={2} color="#8B5CF6" />
-        <pointLight position={[-5, -5, -5]} intensity={1} color="#06B6D4" />
-        <PaperPlane formState={formState} />
+        <PaperPlane />
       </Canvas>
     </div>
   );
@@ -145,7 +122,7 @@ const Contact = () => {
           <div className="relative h-[400px] lg:h-[600px] rounded-[2.5rem] flex items-center justify-center">
              <div className="absolute inset-0 glass-card bg-white/5! rounded-[3rem] blur-xl opacity-50" />
              <div className="absolute inset-0 glass-card bg-transparent border-white/10! rounded-[3rem] overflow-hidden">
-                <ContactCanvas formState={formState} />
+                <ContactCanvas />
              </div>
              
              {/* Floating Icons */}
@@ -164,8 +141,6 @@ const Contact = () => {
              viewport={{ once: true }}
              className="glass-card p-8 md:p-12 rounded-[24px] relative group border-white/10!"
           >
-             {/* Animated Border */}
-             <div className="absolute -inset-[2px] bg-linear-to-r from-purple-500 via-cyan-500 to-transparent rounded-[26px] opacity-20 group-hover:opacity-50 transition-opacity animate-pulse-slow -z-10" />
 
              <div className="mb-10">
                 <h2 className="text-4xl font-bold font-space text-gradient mb-3">Let's Connect</h2>
