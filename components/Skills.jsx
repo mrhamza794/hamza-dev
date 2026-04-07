@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Code2, Cpu, Laptop, Database, Globe, Layers } from "lucide-react";
+
 
 // Assuming exact skills from constants if not exported exactly like this
 const SKILLS = [
@@ -16,12 +18,30 @@ const SKILLS = [
 ];
 
 const SkillCard = ({ skill, index }) => {
+  const cardRef = useRef(null);
+  
+  // Track this card's specific scroll progress inside the viewport window
+  const { scrollYProgress } = useScroll({
+    target: cardRef,
+    offset: ["0 1", "1.2 1"] // From entering bottom of screen to fully constructed
+  });
+
+  // width natively mapped to scroll progress to trigger "fill" as scrolled down
+  const rawWidth = useTransform(scrollYProgress, [0, 1], [0, skill.level]);
+  
+  // Custom hinge entrance style variant
+  const hingeVariant = {
+    hidden: { opacity: 0, scale: 0.8, rotateX: 45, y: 100, transformPerspective: 1000 },
+    show: { opacity: 1, scale: 1, rotateX: 0, y: 0, transition: { duration: 0.8, ease: [0.34, 1.56, 0.64, 1] } }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
+      ref={cardRef}
+      variants={hingeVariant}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
       className="group perspective"
     >
       <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6">
@@ -34,9 +54,9 @@ const SkillCard = ({ skill, index }) => {
         
         {/* Progress Bar Container */}
         <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden transform-translate-z-20">
-          <div 
-            className="h-full bg-linear-to-r from-purple-500 to-cyan-500 rounded-full"
-            style={{ width: `${skill.level}%` }}
+          <motion.div 
+            className="h-full bg-linear-to-r from-purple-500 to-cyan-500 rounded-full w-full origin-left"
+            style={{ scaleX: useTransform(rawWidth, width => width / 100) }}
           />
         </div>
         

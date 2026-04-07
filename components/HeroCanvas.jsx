@@ -55,33 +55,57 @@ const ParticleSystem = ({ count = 500 }) => {
   );
 };
 
-const Scene = ({ mouse }) => {
-  const groupRef = useRef();
+const Scene = () => {
   const dodecahedronRef = useRef();
   const { viewport } = useThree();
 
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime();
+  // We use a mutable ref to track scroll to avoid re-renders
+  const scrollTarget = useRef(0);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      // Calculate scroll progress relative to first 100vh
+      const scrollProgress = window.scrollY / window.innerHeight;
+      scrollTarget.current = Math.min(Math.max(scrollProgress, 0), 1);
+    };
     
-    // Parallax effect
-    if (groupRef.current) {
-      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, mouse.x * viewport.width / 20, 0.05);
-      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, mouse.y * viewport.height / 20, 0.05);
-      
-      groupRef.current.rotation.x = time * 0.1;
-      groupRef.current.rotation.y = time * 0.15;
-    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initialize
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
+  useFrame((state, delta) => {
     if (dodecahedronRef.current) {
-      dodecahedronRef.current.rotation.y += 0.002;
+      const p = scrollTarget.current;
+      
+      // Interpolate towards target scroll positions for smooth 60fps tracking
+      dodecahedronRef.current.rotation.x = THREE.MathUtils.lerp(dodecahedronRef.current.rotation.x, p * Math.PI, 0.1);
+      dodecahedronRef.current.rotation.y = THREE.MathUtils.lerp(dodecahedronRef.current.rotation.y, p * Math.PI, 0.1);
+      
+      const targetScale = 1.5 * (1 - p * 0.7); // Shrinks from 1.5 down to 0.45
+      dodecahedronRef.current.scale.setScalar(
+        THREE.MathUtils.lerp(dodecahedronRef.current.scale.x, targetScale, 0.1)
+      );
+      
+      // Translate right and down, pushing deep into Z
+      dodecahedronRef.current.position.x = THREE.MathUtils.lerp(dodecahedronRef.current.position.x, p * 6, 0.1);
+      dodecahedronRef.current.position.y = THREE.MathUtils.lerp(dodecahedronRef.current.position.y, p * -4, 0.1);
+      dodecahedronRef.current.position.z = THREE.MathUtils.lerp(dodecahedronRef.current.position.z, p * -3, 0.1);
+      
+      // Material Opacity (fades out at end)
+      const material = dodecahedronRef.current.material;
+      if (material) {
+        material.opacity = THREE.MathUtils.lerp(material.opacity, 1 - p * 1.5, 0.1);
+      }
     }
   });
 
   return (
-    <group ref={groupRef}>
-      <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-        <Dodecahedron ref={dodecahedronRef} args={[1.5, 0]}>
-          <meshBasicMaterial color="#8B5CF6" wireframe />
+    <group>
+      <Float speed={0} rotationIntensity={0} floatIntensity={0}>
+        <Dodecahedron ref={dodecahedronRef} args={[1, 0]}>
+          <meshBasicMaterial color="#8B5CF6" wireframe transparent opacity={1} />
         </Dodecahedron>
       </Float>
     </group>
@@ -89,46 +113,28 @@ const Scene = ({ mouse }) => {
 };
 
 const HeroCanvas = () => {
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
-  const [particleCount, setParticleCount] = useState(50); // Heavily reduced default count
+  const [particleCount, setParticleCount] = useState(50);
 
   useEffect(() => {
-    let timeoutId;
-    const handleMouseMove = (e) => {
-      // Debounce logic (throttle to ~60fps equivalent interaction)
-      if(timeoutId) return;
-      timeoutId = setTimeout(() => {
-        setMouse({
-          x: (e.clientX / window.innerWidth) * 2 - 1,
-          y: -(e.clientY / window.innerHeight) * 2 + 1,
-        });
-        timeoutId = null;
-      }, 16);
-    };
-
     const handleResize = () => {
       setParticleCount(window.innerWidth < 768 ? 20 : 50);
     };
-
-    window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("resize", handleResize);
     handleResize();
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("resize", handleResize);
-      if(timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none">
+    <div className="fixed inset-0 w-full h-screen pointer-events-none -z-10">
       <Canvas dpr={[1, 1.5]}>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
         <ambientLight intensity={0.5} color="#8B5CF6" />
         <pointLight position={[10, 10, 10]} color="#3B82F6" intensity={1} />
         
-        <Scene mouse={mouse} />
+        <Scene />
         <ParticleSystem count={particleCount} />
 
         {process.env.NODE_ENV === 'development' && <Stats />}
@@ -136,5 +142,4 @@ const HeroCanvas = () => {
     </div>
   );
 };
-
 export default HeroCanvas;

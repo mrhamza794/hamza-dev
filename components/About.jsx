@@ -4,12 +4,28 @@ import { motion } from "framer-motion";
 import { Code, Palette, Box, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { PERSONAL_INFO, EDUCATION, EXPERTISE } from "@/lib/constants";
 
+const hingeVariant = {
+  hidden: { opacity: 0, scale: 0.8, rotateX: 45, y: 100, transformPerspective: 1000 },
+  show: (delay = 0) => ({
+    opacity: 1, 
+    scale: 1, 
+    rotateX: 0, 
+    y: 0, 
+    transition: { 
+      delay, 
+      duration: 0.8, 
+      ease: [0.34, 1.56, 0.64, 1] 
+    }
+  })
+};
+
 const StatCard = ({ icon: Icon, text, delay }) => (
   <motion.div
-    initial={{ x: -20, opacity: 0 }}
-    whileInView={{ x: 0, opacity: 1 }}
-    transition={{ delay, duration: 0.5 }}
-    viewport={{ once: true }}
+    variants={hingeVariant}
+    initial="hidden"
+    whileInView="show"
+    custom={delay}
+    viewport={{ once: true, amount: 0.2 }}
     className="flex items-center gap-3 glass-card bg-white/5! p-3 px-4 rounded-xl border-white/10! shadow-lg"
   >
     <Icon size={16} className="text-cyan-400" />
@@ -49,17 +65,19 @@ const About = () => {
       <div className="absolute top-1/4 -left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10 animate-pulse-slow" />
       <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] -z-10 animate-pulse-slow" />
 
-      <div className="container mx-auto px-6 max-w-[1400px]">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        
         {/* Section Header */}
-        <div className="mb-20">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-bold font-space text-gradient mb-4"
-          >
+        <motion.div 
+          variants={hingeVariant}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          className="mb-20"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold font-space text-gradient mb-4">
             About Me
-          </motion.h2>
+          </h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -76,7 +94,7 @@ const About = () => {
             viewport={{ once: true }}
             className="w-[100px] h-1 bg-linear-to-r from-purple-500 to-cyan-500 origin-left rounded-full"
           />
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-20 items-center">
           {/* Left: Profile Visual */}
@@ -114,28 +132,32 @@ const About = () => {
 
           {/* Right: Content Area */}
           <div className="flex flex-col gap-12">
-            <div className="space-y-6">
-              <motion.p
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="text-lg md:text-xl text-slate-300 leading-relaxed font-inter"
-              >
-                {PERSONAL_INFO.bio.split(". ")[0]}.
-              </motion.p>
-              <motion.p
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                viewport={{ once: true }}
-                className="text-lg md:text-xl text-slate-300 leading-relaxed font-inter"
-              >
-                With over {PERSONAL_INFO.experience} in the industry, I have honed my skills in building robust architectures and delightful user experiences. Currently leading a talented team of developers at Code Flamme.
-              </motion.p>
-            </div>
+            <motion.div 
+              variants={hingeVariant}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              className="space-y-6"
+            >
+              <p className="text-lg md:text-xl text-slate-300 leading-relaxed font-inter">
+                {PERSONAL_INFO.bio.split(". ")[0]}.{" "}
+                <span className="text-cyan-400 font-medium">Passionately building modern digital experiences.</span>
+              </p>
+              <p className="text-slate-400 leading-relaxed">
+                {PERSONAL_INFO.bio.split(". ").slice(1).join(". ")}
+              </p>
+            </motion.div>
 
             {/* Expertise Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <motion.div 
+              variants={hingeVariant}
+              initial="hidden"
+              whileInView="show"
+              custom={0.2}
+              viewport={{ once: true, amount: 0.2 }}
+            >
+              <h3 className="text-2xl font-bold font-space text-slate-200 mb-6">Core Competencies</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {EXPERTISE.map((item, idx) => {
                 const icons = { Code, Palette, Box };
                 return (
@@ -150,6 +172,7 @@ const About = () => {
                 );
               })}
             </div>
+            </motion.div>
 
             {/* Education Banner */}
             <motion.div
