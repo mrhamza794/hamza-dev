@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Code, Palette, Box, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { PERSONAL_INFO, EDUCATION, EXPERTISE } from "@/lib/constants";
 
@@ -59,11 +60,22 @@ const ExpertiseCard = ({ title, description, icon: Icon, color, delay }) => {
 };
 
 const About = () => {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+  const yFast = useTransform(scrollYProgress, [0, 1], [0, 500]);
+  const ySlow = useTransform(scrollYProgress, [0, 1], [0, -300]);
+
   return (
-    <section id="about" className="relative py-32 overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10 animate-pulse-slow" />
-      <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] -z-10 animate-pulse-slow" />
+    <section id="about" ref={containerRef} className="relative py-32 overflow-hidden">
+      {/* Background Orbs with Parallax mapped to scroll relative progress */}
+      <motion.div 
+        style={{ y: yFast }}
+        className="absolute top-1/4 -left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10" 
+      />
+      <motion.div 
+        style={{ y: ySlow }}
+        className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] -z-10" 
+      />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         
