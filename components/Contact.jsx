@@ -166,7 +166,7 @@ const Contact = () => {
                 variants={formHingeVariant}
                 type="submit"
                 disabled={formState === "submitting" || formState === "success"}
-                className={`w-full py-4 rounded-xl font-bold tracking-wide flex items-center justify-center gap-2 transition-all ${
+                className={`contact-form-submit w-full py-4 rounded-xl font-bold tracking-wide flex items-center justify-center gap-2 transition-all ${
                    formState === "success" 
                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 cursor-default" 
                    : "bg-linear-to-r from-purple-600 to-cyan-600 text-white hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] hover:scale-[1.02] cursor-pointer"

@@ -195,6 +195,18 @@ body {
   color: #0f172a !important;
 }
 
+/* Hero gradient CTA only — .light #hero .text-white would flip label to slate */
+.light #hero button.hero-cta-primary,
+.light #hero button.hero-cta-primary svg {
+  color: #ffffff !important;
+}
+
+/* Contact form submit (gradient) — .light #contact .text-white forces slate on section copy */
+.light #contact form button.contact-form-submit.text-white,
+.light #contact form button.contact-form-submit.text-white svg {
+  color: #ffffff !important;
+}
+
 .light .bg-slate-950 {
   background-color: #f1f5f9 !important;
 }

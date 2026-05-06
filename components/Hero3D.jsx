@@ -192,20 +192,22 @@ const Hero3D = () => {
               className="flex flex-wrap gap-3 sm:gap-4"
             >
               <button 
+                type="button"
                 onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group relative px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl bg-linear-to-r from-purple-600 to-blue-600 font-space font-bold text-sm sm:text-base text-white light:text-white [&_svg]:text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(37,99,235,0.45)] flex items-center gap-2 overflow-hidden"
+                className="hero-cta-primary group relative px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl bg-linear-to-r from-purple-600 to-blue-600 font-space font-bold text-sm sm:text-base text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(37,99,235,0.45)] flex items-center gap-2 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
                 View My Work
-                <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform sm:w-5 sm:h-5 text-white" />
+                <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform sm:w-5 sm:h-5" />
               </button>
               
               <button 
+                type="button"
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl glass-card border-2 border-white/25 font-space font-bold text-sm sm:text-base text-white light:text-white [&_svg]:text-white light:bg-slate-950/55 light:backdrop-blur-md dark:bg-transparent hover:bg-white/10 hover:border-white/35 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl glass-card bg-transparent border-2 border-white/20 font-space font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:bg-white/10 hover:border-white/30 transition-all flex items-center gap-2"
               >
                 Contact Me
-                <Mail size={18} className="sm:w-5 sm:h-5 text-white" />
+                <Mail size={18} className="sm:w-5 sm:h-5" />
               </button>
             </motion.div>
           </motion.div>
