@@ -17,7 +17,7 @@ const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
     </div>
     <div>
       <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
-      <p className="text-white light:!text-slate-800 font-medium">{value}</p>
+      <p className="text-white light:text-slate-800! font-medium">{value}</p>
     </div>
   </motion.div>
 );
@@ -51,7 +51,7 @@ const Contact = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (formState === "error" || formState === "idle") setFormState("typing");
+    if (formState === "error" || formState === "idle" || formState === "success") setFormState("typing");
   };
 
   const handleSubmit = async (e) => {
@@ -76,6 +76,7 @@ const Contact = () => {
       if (!res.ok) {
         throw new Error(data.error || "Something went wrong.");
       }
+      setFormData({ name: "", email: "", message: "" });
       setFormState("success");
     } catch (err) {
       setFormState("error");
@@ -102,7 +103,7 @@ const Contact = () => {
             className="flex flex-col gap-10"
           >
             <div>
-              <h2 className="text-4xl md:text-6xl font-bold font-space text-white light:!text-slate-900 mb-6">
+              <h2 className="text-4xl md:text-6xl font-bold font-space text-white light:text-slate-900! mb-6">
                 Let's innovate <br/> <span className="text-cyan-400">together.</span>
               </h2>
               <p className="text-slate-400 text-lg md:text-xl font-inter leading-relaxed max-w-lg">
@@ -125,7 +126,7 @@ const Contact = () => {
             viewport={{ once: true, amount: 0.2 }}
             className="glass-card p-8 md:p-12 rounded-[32px] border border-white/10 light:border-slate-300/60 shadow-2xl relative bg-black/20 light:bg-white/75 backdrop-blur-xl"
           >
-            <motion.h3 variants={formHingeVariant} className="text-2xl font-bold font-space text-white light:!text-slate-900 mb-8">
+            <motion.h3 variants={formHingeVariant} className="text-2xl font-bold font-space text-white light:text-slate-900! mb-8">
               Send a Message
             </motion.h3>
 
@@ -138,7 +139,7 @@ const Contact = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Your Name"
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
                 <User size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -151,7 +152,7 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="Email Address"
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
                 <Mail size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -164,7 +165,7 @@ const Contact = () => {
                   value={formData.message}
                   onChange={handleInputChange}
                   placeholder="Project details..."
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
                 />
                 <MessageSquare size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
