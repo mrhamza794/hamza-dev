@@ -2,6 +2,8 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { PERSONAL_INFO } from "@/lib/constants";
 import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
+import SmoothScroll from "@/components/SmoothScroll";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,13 +41,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
-        <ScrollProgress />
-        <CustomCursor />
-        <main className="relative z-10">
-          {children}
-        </main>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <SmoothScroll />
+          <ScrollProgress />
+          <CustomCursor />
+          <main className="relative z-10">
+            {children}
+          </main>
+        </ThemeProvider>
       </body>
     </html>
   );

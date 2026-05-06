@@ -1,46 +1,69 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ExternalLink, Github, Star, GitFork, ArrowRight } from "lucide-react";
-import { GITHUB_USERNAME } from "@/lib/constants";
+import { ExternalLink, Code2, ArrowRight } from "lucide-react";
 
-// Fallback data in case of API failure
-const FALLBACK_PROJECTS = [
+const PROJECTS = [
   {
     id: 1,
-    name: "ePortfolio",
-    description: "Next.js 3D Portfolio built with React Three Fiber, Tailwind CSS v4, and modern glassmorphism design.",
-    html_url: "https://github.com/mrhamza794/ePortfolio",
-    homepage: "https://hamzadev.vercel.app",
-    stargazers_count: 5,
-    language: "JavaScript",
-    topics: ["react", "nextjs", "threejs", "tailwind"]
+    name: "CommerceCore",
+    description: "Scalable e-commerce platform with product catalog, checkout flow, payments integration, and admin inventory controls.",
+    homepage: "#",
+    topics: ["nextjs", "node", "mongodb"]
   },
   {
     id: 2,
-    name: "AI-Analytics-Dashboard",
-    description: "A machine learning dashboard that visualizes predictive data using Python, React, and Recharts.",
-    html_url: "https://github.com/mrhamza794",
-    stargazers_count: 3,
-    language: "TypeScript",
-    topics: ["ai", "react", "dashboard"]
+    name: "Personal Brand Portfolio",
+    description: "Modern developer portfolio with animated sections, responsive layouts, and fast loading optimizations.",
+    homepage: "#",
+    topics: ["react", "framer-motion", "tailwind"]
   },
   {
     id: 3,
-    name: "E-Commerce-Engine",
-    description: "Full-stack headless e-commerce backend built with Node.js, Express, and high-performance MongoDB clusters.",
-    html_url: "https://github.com/mrhamza794",
-    stargazers_count: 8,
-    language: "Node.js",
-    topics: ["ecommerce", "backend", "api"]
-  }
+    name: "Business Site Suite",
+    description: "Corporate website package with service pages, lead forms, SEO structure, and analytics-ready setup.",
+    homepage: "#",
+    topics: ["nextjs", "seo", "cms"]
+  },
+  {
+    id: 4,
+    name: "SalesFlow CRM",
+    description: "CRM dashboard for lead tracking, deal pipeline, team assignments, and customer communication history.",
+    homepage: "#",
+    topics: ["react", "redux", "charts"]
+  },
+  {
+    id: 5,
+    name: "OpsControl Panel",
+    description: "Custom admin panel for multi-role management, workflow automation, and configurable business modules.",
+    homepage: "#",
+    topics: ["admin", "rbac", "api"]
+  },
+  {
+    id: 6,
+    name: "Client Portal Pro",
+    description: "Secure client portal for project updates, document exchange, support tickets, and account controls.",
+    homepage: "#",
+    topics: ["portal", "auth", "files"]
+  },
+  {
+    id: 7,
+    name: "BookingFlow Platform",
+    description: "Booking and scheduling system with calendar sync, reminders, service slots, and payment support.",
+    homepage: "#",
+    topics: ["calendar", "booking", "payments"]
+  },
+  {
+    id: 8,
+    name: "InsightBoard BI",
+    description: "Business intelligence dashboard with KPI tracking, custom reports, and role-based data visibility.",
+    homepage: "#",
+    topics: ["dashboard", "kpi", "reports"]
+  },
 ];
 
 const Projects = () => {
-  const [projects, setProjects] = useState(FALLBACK_PROJECTS);
-  const [loading, setLoading] = useState(true);
-
   const containerRef = useRef(null);
   
   // Track scroll strictly through the 200vh tall container to map to tracking horizontal
@@ -53,36 +76,18 @@ const Projects = () => {
   // Mapped x translates the wide inner flex track leftwards
   const xTransform = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]); 
 
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=6`);
-        if (response.ok) {
-          const data = await response.json();
-          const validData = data.filter(repo => !repo.fork && repo.description);
-          if (validData.length > 0) setProjects(validData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch Github projects:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
-  }, []);
-
   return (
-    <section id="projects" ref={containerRef} className="relative h-[200vh] bg-slate-950">
+    <section id="projects" ref={containerRef} className="relative h-[220vh] bg-slate-100 dark:bg-slate-950">
       <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center items-center">
         
         {/* Absolute Parallax Orbs */}
         <motion.div 
           style={{ y: useTransform(scrollYProgress, [0, 1], [0, 300]) }}
-          className="absolute top-10 left-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"
+          className="absolute top-10 left-10 w-[500px] h-[500px] bg-purple-400/20 dark:bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"
         />
         <motion.div 
           style={{ y: useTransform(scrollYProgress, [0, 1], [0, -300]) }}
-          className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none"
+          className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-cyan-400/15 dark:bg-cyan-600/10 rounded-full blur-[100px] pointer-events-none"
         />
 
         <div className="w-full max-w-[1400px] mx-auto px-6 z-10 mb-12">
@@ -90,8 +95,8 @@ const Projects = () => {
             Selected Works
           </h2>
           <div className="w-24 h-1 bg-linear-to-r from-purple-500 to-cyan-500 rounded-full mb-4" />
-          <p className="text-slate-400 text-lg max-w-2xl">
-            A showcase of my recent repositories and production systems via the GitHub API. Keep scrolling to navigate horizontally.
+          <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl">
+            A curated showcase of production-grade project types I build for modern businesses.
           </p>
         </div>
 
@@ -101,7 +106,7 @@ const Projects = () => {
              className="flex gap-8 px-6 md:px-20 min-w-max"
              style={{ x: xTransform }}
           >
-            {projects.map((repo, idx) => {
+            {PROJECTS.map((repo, idx) => {
               // Subtle localized scroll progress per card to create 3D folding
               return (
                 <ProjectCard key={repo.id || idx} repo={repo} idx={idx} />
@@ -131,29 +136,29 @@ const ProjectCard = ({ repo, idx }) => {
     <motion.div
       ref={cardRef}
       style={{ scale, rotateY, opacity }}
-      className="w-[300px] md:w-[450px] shrink-0 glass-card bg-white/5! p-8 rounded-3xl border-white/10! shadow-2xl perspective"
+      className="relative w-[300px] md:w-[450px] shrink-0 glass-card bg-white/85! dark:bg-white/5! p-8 rounded-3xl border-slate-200/80! dark:border-white/10! shadow-2xl perspective"
     >
       <div className="flex justify-between items-start mb-6">
-        <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400">
-          <Github size={32} />
+        <div className="p-3 bg-purple-500/15 dark:bg-purple-500/10 rounded-xl text-purple-600 dark:text-purple-400">
+          <Code2 size={32} />
         </div>
         <div className="flex gap-3">
           {repo.homepage && (
-            <a href={repo.homepage} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-cyan-400 transition-colors">
+            <a href={repo.homepage} target="_blank" rel="noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
               <ExternalLink size={20} />
             </a>
           )}
-          <a href={repo.html_url} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-purple-400 transition-colors">
+          <a href={repo.homepage || "#"} target="_blank" rel="noreferrer" className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
             <ArrowRight size={20} />
           </a>
         </div>
       </div>
 
-      <h3 className="text-2xl font-bold font-space text-white mb-3 truncate" title={repo.name}>
+      <h3 className="text-2xl font-bold font-space text-slate-900 dark:text-white mb-3 truncate" title={repo.name}>
         {repo.name}
       </h3>
       
-      <p className="text-slate-400 text-sm leading-relaxed mb-6 h-[60px] overflow-hidden line-clamp-3">
+      <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6 h-[60px] overflow-hidden line-clamp-3">
         {repo.description || "No description provided for this repository."}
       </p>
 
@@ -165,23 +170,16 @@ const ProjectCard = ({ repo, idx }) => {
             </span>
           ))
         ) : (
-          <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-slate-400">
+          <span className="px-3 py-1 bg-slate-100/90 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 rounded-full text-xs text-slate-600 dark:text-slate-400">
             {repo.language || "Code"}
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-6 pt-6 border-t border-white/10 mt-auto">
-        <div className="flex items-center gap-2 text-slate-300 text-sm">
-          <Star size={16} className="text-amber-400" />
-          <span>{repo.stargazers_count || 0}</span>
-        </div>
-        {(repo.forks_count > 0) && (
-          <div className="flex items-center gap-2 text-slate-300 text-sm">
-            <GitFork size={16} className="text-emerald-400" />
-            <span>{repo.forks_count}</span>
-          </div>
-        )}
+      <div className="flex items-center gap-6 pt-6 border-t border-slate-200/80 dark:border-white/10 mt-auto">
+        <span className="text-slate-600 dark:text-slate-300 text-sm font-medium">
+          Real-world implementation
+        </span>
       </div>
     </motion.div>
   );

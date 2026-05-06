@@ -10,6 +10,7 @@ const CustomCursor = () => {
   const [isPointer, setIsPointer] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const pathname = usePathname();
+  const positionRef = useRef({ x: 0, y: 0 });
   
   // Store trail positions
   const trailRef = useRef(Array(TRAIL_DOTS).fill({ x: -100, y: -100 }));
@@ -17,17 +18,19 @@ const CustomCursor = () => {
 
   useEffect(() => {
     // Only show custom cursor on non-touch devices
-    if (window.matchMedia("(pointer: coarse)").matches) return;
+    if (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setIsVisible(true);
 
     const moveCursor = (e) => {
-      setPosition({ x: e.clientX, y: e.clientY });
+      const nextPosition = { x: e.clientX, y: e.clientY };
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
     };
 
     const handlePointerEntry = () => setIsPointer(true);
     const handlePointerLeave = () => setIsPointer(false);
 
-    window.addEventListener("mousemove", moveCursor);
+    window.addEventListener("mousemove", moveCursor, { passive: true });
 
     const attachListeners = () => {
       const clickables = document.querySelectorAll('a, button, input, textarea, [role="button"], [role="tab"]');
@@ -69,8 +72,8 @@ const CustomCursor = () => {
       
       // The first dot follows the main cursor
       currentPositions[0] = {
-        x: currentPositions[0].x + (position.x - currentPositions[0].x) * 0.3,
-        y: currentPositions[0].y + (position.y - currentPositions[0].y) * 0.3,
+        x: currentPositions[0].x + (positionRef.current.x - currentPositions[0].x) * 0.3,
+        y: currentPositions[0].y + (positionRef.current.y - currentPositions[0].y) * 0.3,
       };
 
       // Following dots follow the previous dot
@@ -89,7 +92,7 @@ const CustomCursor = () => {
     
     updateTrail();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [position, isVisible]);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 

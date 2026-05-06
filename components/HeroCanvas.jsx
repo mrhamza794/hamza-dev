@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerspectiveCamera, Dodecahedron, Float, Stats } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { PerspectiveCamera, Dodecahedron, Float } from "@react-three/drei";
 import * as THREE from "three";
+import { useTheme } from "next-themes";
 
-const ParticleSystem = ({ count = 500 }) => {
+const ParticleSystem = ({ count = 500, color = "#06B6D4", opacity = 0.4 }) => {
   const mesh = useRef();
-  const light = useRef();
   
   const particles = useMemo(() => {
     const temp = [];
@@ -50,14 +50,13 @@ const ParticleSystem = ({ count = 500 }) => {
   return (
     <instancedMesh ref={mesh} args={[null, null, count]}>
       <sphereGeometry args={[1, 8, 8]} />
-      <meshBasicMaterial color="#06B6D4" transparent opacity={0.4} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} />
     </instancedMesh>
   );
 };
 
-const Scene = () => {
+const Scene = ({ wireColor = "#8B5CF6" }) => {
   const dodecahedronRef = useRef();
-  const { viewport } = useThree();
 
   // We use a mutable ref to track scroll to avoid re-renders
   const scrollTarget = useRef(0);
@@ -105,7 +104,7 @@ const Scene = () => {
     <group>
       <Float speed={0} rotationIntensity={0} floatIntensity={0}>
         <Dodecahedron ref={dodecahedronRef} args={[1, 0]}>
-          <meshBasicMaterial color="#8B5CF6" wireframe transparent opacity={1} />
+          <meshBasicMaterial color={wireColor} wireframe transparent opacity={1} />
         </Dodecahedron>
       </Float>
     </group>
@@ -113,11 +112,21 @@ const Scene = () => {
 };
 
 const HeroCanvas = () => {
+  const { theme } = useTheme();
   const [particleCount, setParticleCount] = useState(50);
+  const [shouldRender, setShouldRender] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
-      setParticleCount(window.innerWidth < 768 ? 20 : 50);
+      const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (isReducedMotion) {
+        setShouldRender(false);
+        setParticleCount(0);
+        return;
+      }
+
+      setShouldRender(true);
+      setParticleCount(window.innerWidth < 768 ? 12 : 30);
     };
     window.addEventListener("resize", handleResize);
     handleResize();
@@ -127,17 +136,20 @@ const HeroCanvas = () => {
     };
   }, []);
 
+  if (!shouldRender) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 w-full h-screen pointer-events-none -z-10">
       <Canvas dpr={[1, 1.5]}>
         <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-        <ambientLight intensity={0.5} color="#8B5CF6" />
-        <pointLight position={[10, 10, 10]} color="#3B82F6" intensity={1} />
+        <ambientLight intensity={theme === "light" ? 0.35 : 0.5} color={theme === "light" ? "#94a3b8" : "#8B5CF6"} />
+        <pointLight position={[10, 10, 10]} color={theme === "light" ? "#cbd5e1" : "#3B82F6"} intensity={theme === "light" ? 0.6 : 1} />
         
-        <Scene />
-        <ParticleSystem count={particleCount} />
+        <Scene wireColor={theme === "light" ? "#94a3b8" : "#8B5CF6"} />
+        <ParticleSystem count={particleCount} color={theme === "light" ? "#94a3b8" : "#06B6D4"} opacity={theme === "light" ? 0.18 : 0.4} />
 
-        {process.env.NODE_ENV === 'development' && <Stats />}
       </Canvas>
     </div>
   );

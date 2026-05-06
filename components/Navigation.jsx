@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Github, Linkedin, Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
+import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
+import { useTheme } from "next-themes";
 
 const NAV_LINKS = [
   { name: "About", href: "#about" },
@@ -13,9 +15,15 @@ const NAV_LINKS = [
 ];
 
 const Navigation = () => {
+  const { theme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("Hero");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,9 +87,9 @@ const Navigation = () => {
                 href={link.href}
                 onClick={(e) => handleClick(e, link.href)}
                 className={`font-space font-medium transition-all duration-300 ${
-                  activeSection === link.name 
-                    ? "text-white" 
-                    : "text-slate-300 opacity-80 hover:opacity-100 hover:text-white"
+                  activeSection === link.name
+                    ? "text-slate-900 dark:text-white opacity-100 font-semibold"
+                    : "text-slate-600 dark:text-slate-300 opacity-80 hover:opacity-100 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
                 {link.name}
@@ -95,29 +103,37 @@ const Navigation = () => {
             </div>
           ))}
           
-          <div className="h-6 w-px bg-white/10 mx-2" />
+          <div className="h-6 w-px bg-slate-300/70 dark:bg-white/10 mx-2" aria-hidden />
           
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-full glass-card hover:scale-110 transition-all duration-300"
+            >
+              {mounted && theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+            </button>
             <a
               href={PERSONAL_INFO.linkedin}
               target="_blank"
               className="p-2 rounded-full glass-card hover:rotate-360 hover:scale-110 transition-all duration-500 group"
             >
-              <Linkedin size={18} className="group-hover:text-cyan-accent" />
+              <FaLinkedinIn size={16} className="group-hover:text-cyan-accent" />
             </a>
             <a
               href={PERSONAL_INFO.github}
               target="_blank"
               className="p-2 rounded-full glass-card hover:rotate-360 hover:scale-110 transition-all duration-500 group"
             >
-              <Github size={18} className="group-hover:text-purple-accent" />
+              <FaGithub size={16} className="group-hover:text-purple-accent" />
             </a>
           </div>
         </div>
 
         {/* Mobile Hammer */}
         <button 
-          className="md:hidden p-2 text-white"
+          className="md:hidden p-2 text-slate-900 dark:text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -132,7 +148,7 @@ const Navigation = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-40 bg-background-outer/95 backdrop-blur-3xl flex flex-col items-center justify-center gap-8 md:hidden"
+            className="fixed inset-0 z-40 bg-slate-50/95 dark:bg-background-outer/95 backdrop-blur-3xl flex flex-col items-center justify-center gap-8 md:hidden"
           >
             {NAV_LINKS.map((link, i) => (
               <motion.a
@@ -142,18 +158,30 @@ const Navigation = () => {
                 transition={{ delay: 0.1 * i }}
                 href={link.href}
                 onClick={(e) => handleClick(e, link.href)}
-                className="text-4xl font-space font-bold text-gradient"
+                className={`text-4xl font-space font-bold ${
+                  activeSection === link.name
+                    ? "text-slate-900 dark:text-white underline decoration-cyan-500 decoration-2 underline-offset-10"
+                    : "text-gradient"
+                }`}
               >
                 {link.name}
               </motion.a>
             ))}
             
             <div className="flex gap-8 mt-12">
+               <button
+                 type="button"
+                 aria-label="Toggle theme"
+                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                 className="p-4 glass-card rounded-full"
+               >
+                 {mounted && theme === "light" ? <Moon size={32} /> : <Sun size={32} />}
+               </button>
                <a href={PERSONAL_INFO.linkedin} target="_blank" className="p-4 glass-card rounded-full">
-                <Linkedin size={32} />
+                <FaLinkedinIn size={24} />
                </a>
                <a href={PERSONAL_INFO.github} target="_blank" className="p-4 glass-card rounded-full">
-                <Github size={32} />
+                <FaGithub size={24} />
                </a>
             </div>
           </motion.div>

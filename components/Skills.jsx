@@ -2,22 +2,26 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Code2, Cpu, Laptop, Database, Globe, Layers } from "lucide-react";
+import { Braces, Database, GitBranch, Globe, LayoutDashboard, Palette, Server, ShieldCheck } from "lucide-react";
 
 
 // Assuming exact skills from constants if not exported exactly like this
 const SKILLS = [
-  { name: "React / Next.js", level: 95, icon: Globe },
-  { name: "Three.js / WebGL", level: 85, icon: Layers },
-  { name: "Tailwind CSS v4", level: 90, icon: Laptop },
-  { name: "Node.js / Express", level: 80, icon: Database },
-  { name: "MongoDB / SQL", level: 75, icon: Database },
-  { name: "Framer Motion", level: 85, icon: Code2 },
-  { name: "Performance Optimization", level: 90, icon: Cpu },
-  { name: "UI/UX Design", level: 80, icon: Laptop }
+  { name: "React", level: 95, icon: Globe },
+  { name: "Next.js", level: 93, icon: LayoutDashboard },
+  { name: "JavaScript (ES6+)", level: 92, icon: Braces },
+  { name: "TypeScript", level: 88, icon: Braces },
+  { name: "Redux Toolkit", level: 90, icon: GitBranch },
+  { name: "Tailwind CSS", level: 94, icon: Palette },
+  { name: "Node.js", level: 86, icon: Server },
+  { name: "Express.js", level: 85, icon: Server },
+  { name: "MongoDB", level: 84, icon: Database },
+  { name: "REST APIs", level: 90, icon: Globe },
+  { name: "JWT Auth", level: 87, icon: ShieldCheck },
+  { name: "Git & GitHub", level: 91, icon: GitBranch }
 ];
 
-const SkillCard = ({ skill, index }) => {
+const SkillCard = ({ skill }) => {
   const cardRef = useRef(null);
   
   // Track this card's specific scroll progress inside the viewport window
@@ -42,18 +46,18 @@ const SkillCard = ({ skill, index }) => {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
-      className="group perspective"
+      className="group perspective relative"
     >
       <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6">
         <div className="flex items-center gap-4 mb-4 transform-translate-z-10">
           <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center">
             <skill.icon size={20} className="text-cyan-400" />
           </div>
-          <h3 className="text-lg font-bold font-space text-slate-200">{skill.name}</h3>
+          <h3 className="text-lg font-bold font-space text-slate-800 dark:text-slate-200">{skill.name}</h3>
         </div>
         
         {/* Progress Bar Container */}
-        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden transform-translate-z-20">
+        <div className="w-full bg-slate-200/90 dark:bg-white/5 rounded-full h-2 overflow-hidden transform-translate-z-20">
           <motion.div 
             className="h-full bg-linear-to-r from-purple-500 to-cyan-500 rounded-full w-full origin-left"
             style={{ scaleX: useTransform(rawWidth, width => width / 100) }}
@@ -75,14 +79,14 @@ const Skills = () => {
         <div className="flex flex-col items-center mb-16 text-center">
           <h2 className="text-4xl md:text-5xl font-bold font-space text-gradient mb-4">Technical Arsenal</h2>
           <div className="w-24 h-1 bg-linear-to-r from-purple-500 to-cyan-500 rounded-full" />
-          <p className="mt-6 text-slate-400 max-w-2xl text-lg">
+          <p className="mt-6 text-slate-600 dark:text-slate-400 max-w-2xl text-lg">
             A comprehensive breakdown of my core competencies, focusing on the modern web stack and performance architecture.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {SKILLS.map((skill, idx) => (
-            <SkillCard key={skill.name} skill={skill} index={idx} />
+            <SkillCard key={skill.name} skill={skill} />
           ))}
         </div>
       </div>

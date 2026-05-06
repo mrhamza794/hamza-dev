@@ -64,8 +64,15 @@ export default function Home() {
       {/* Footer */}
       <Footer />
 
-      {/* Global Background overlay */}
-      <div className="fixed inset-0 pointer-events-none bg-linear-to-b from-transparent via-background-outer/20 to-background-outer/80 z-0" />
+      {/* Two separate overlays: Tailwind does not reliably override all gradient stops with dark:* (light via/to leaked into dark mode). */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 block dark:hidden bg-linear-to-b from-transparent via-slate-200/10 to-slate-100/25"
+        aria-hidden
+      />
+      <div
+        className="fixed inset-0 pointer-events-none z-0 hidden dark:block bg-linear-to-b from-transparent via-slate-950/25 to-slate-950/85"
+        aria-hidden
+      />
     </div>
   )
 }

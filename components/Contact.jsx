@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
 import { Send, Mail, User, MessageSquare, MapPin, Phone, AlertCircle } from "lucide-react";
 import { PERSONAL_INFO } from "@/lib/constants";
+import { useTheme } from "next-themes";
 
 const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
   <motion.div 
@@ -11,19 +12,20 @@ const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500/50 transition-colors"
+    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 light:bg-white/70 border border-white/10 light:border-slate-300/60 hover:border-cyan-500/50 transition-colors"
   >
     <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
       <Icon size={20} />
     </div>
     <div>
       <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
-      <p className="text-white font-medium">{value}</p>
+      <p className="text-white light:!text-slate-800 font-medium">{value}</p>
     </div>
   </motion.div>
 );
 
 const Contact = () => {
+  const { theme } = useTheme();
   const [formState, setFormState] = useState("idle"); // idle | typing | submitting | success | error
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [errorMsg, setErrorMsg] = useState("");
@@ -34,7 +36,8 @@ const Contact = () => {
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end end"] });
   const hue1 = useTransform(scrollYProgress, [0, 1], [250, 200]);
   const hue2 = useTransform(scrollYProgress, [0, 1], [280, 240]);
-  const bgImage = useMotionTemplate`linear-gradient(135deg, hsl(${hue1}, 70%, 15%), hsl(${hue2}, 60%, 10%))`;
+  const darkBgImage = useMotionTemplate`linear-gradient(135deg, hsl(${hue1}, 70%, 15%), hsl(${hue2}, 60%, 10%))`;
+  const lightBgImage = "linear-gradient(135deg, rgba(248,250,252,1) 0%, rgba(226,232,240,1) 100%)";
   
   // Custom hinge variant for staggering children
   const formHingeVariant = {
@@ -71,7 +74,7 @@ const Contact = () => {
     <motion.section 
       id="contact" 
       ref={sectionRef} 
-      style={{ backgroundImage: bgImage }}
+      style={{ backgroundImage: theme === "light" ? lightBgImage : darkBgImage }}
       className="relative py-32 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 z-10 relative">
@@ -86,7 +89,7 @@ const Contact = () => {
             className="flex flex-col gap-10"
           >
             <div>
-              <h2 className="text-4xl md:text-6xl font-bold font-space text-white mb-6">
+              <h2 className="text-4xl md:text-6xl font-bold font-space text-white light:!text-slate-900 mb-6">
                 Let's innovate <br/> <span className="text-cyan-400">together.</span>
               </h2>
               <p className="text-slate-400 text-lg md:text-xl font-inter leading-relaxed max-w-lg">
@@ -107,9 +110,9 @@ const Contact = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            className="glass-card p-8 md:p-12 rounded-[32px] border border-white/10 shadow-2xl relative bg-black/20 backdrop-blur-xl"
+            className="glass-card p-8 md:p-12 rounded-[32px] border border-white/10 light:border-slate-300/60 shadow-2xl relative bg-black/20 light:bg-white/75 backdrop-blur-xl"
           >
-            <motion.h3 variants={formHingeVariant} className="text-2xl font-bold font-space text-white mb-8">
+            <motion.h3 variants={formHingeVariant} className="text-2xl font-bold font-space text-white light:!text-slate-900 mb-8">
               Send a Message
             </motion.h3>
 
@@ -122,7 +125,7 @@ const Contact = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Your Name"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 pl-12 text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
                 <User size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -135,7 +138,7 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="Email Address"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 pl-12 text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
                 <Mail size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -148,7 +151,7 @@ const Contact = () => {
                   value={formData.message}
                   onChange={handleInputChange}
                   placeholder="Project details..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 pl-12 text-slate-200 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:!text-slate-800 placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
                 />
                 <MessageSquare size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
