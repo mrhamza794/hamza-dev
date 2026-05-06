@@ -30,7 +30,7 @@ const StatCard = ({ icon: Icon, text, delay }) => (
     className="flex items-center gap-3 glass-card bg-white/5! light:bg-white/75! p-3 px-4 rounded-xl border-white/10! light:border-slate-300/60! shadow-lg"
   >
     <Icon size={16} className="text-cyan-400" />
-    <span className="text-sm text-slate-300 light:!text-slate-700 font-medium">{text}</span>
+    <span className="text-sm text-slate-300 light:text-slate-700! font-medium">{text}</span>
   </motion.div>
 );
 
@@ -53,7 +53,7 @@ const ExpertiseCard = ({ title, description, icon: Icon, color, delay }) => {
       <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-transform">
         <Icon size={28} className={`text-${color}-500`} />
       </div>
-      <h3 className="text-xl font-bold font-space mb-3 text-white light:!text-slate-900">{title}</h3>
+      <h3 className="text-xl font-bold font-space mb-3 text-white light:text-slate-900!">{title}</h3>
       <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
     </motion.div>
   );
@@ -151,7 +151,7 @@ const About = () => {
               viewport={{ once: true, amount: 0.2 }}
               className="space-y-6"
             >
-              <p className="text-lg md:text-xl text-slate-300 light:!text-slate-700 leading-relaxed font-inter">
+              <p className="text-lg md:text-xl text-slate-300 light:text-slate-700! leading-relaxed font-inter">
                 {PERSONAL_INFO.bio.split(". ")[0]}.{" "}
                 <span className="text-cyan-400 font-medium">Passionately building modern digital experiences.</span>
               </p>
@@ -168,7 +168,7 @@ const About = () => {
               custom={0.2}
               viewport={{ once: true, amount: 0.2 }}
             >
-              <h3 className="text-2xl font-bold font-space text-slate-200 light:!text-slate-900 mb-6">Core Competencies</h3>
+              <h3 className="text-2xl font-bold font-space text-slate-200 light:text-slate-900! mb-6">Core Competencies</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {EXPERTISE.map((item, idx) => {
                 const icons = { Code, Palette, Server };
@@ -202,7 +202,7 @@ const About = () => {
                   <GraduationCap size={32} />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold font-space text-white light:!text-slate-900">{EDUCATION[0].degree}</h4>
+                  <h4 className="text-xl font-bold font-space text-white light:text-slate-900!">{EDUCATION[0].degree}</h4>
                   <p className="text-cyan-400 font-medium">{EDUCATION[0].institution}</p>
                   <p className="text-slate-400 text-sm mt-1">{EDUCATION[0].years}</p>
                 </div>

@@ -47,14 +47,14 @@ const Footer = () => {
 
           {/* Column 2: Quick Links */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-white light:!text-slate-900 font-space font-bold text-xl mb-2">Navigate</h3>
+            <h3 className="text-white light:text-slate-900! font-space font-bold text-xl mb-2">Navigate</h3>
             <ul className="space-y-3">
               {['About', 'Skills', 'Projects', 'Contact'].map((item) => (
                 <li key={item}>
                   <a 
                     href={`#${item.toLowerCase()}`}
                     onClick={(e) => handleNavClick(e, item.toLowerCase())}
-                    className="text-slate-500 hover:text-white light:hover:!text-slate-900 transition-colors flex items-center gap-2 group w-fit"
+                    className="text-slate-500 hover:text-white light:hover:text-slate-900! transition-colors flex items-center gap-2 group w-fit"
                   >
                     <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-cyan-400" />
                     <span className="group-hover:text-gradient transition-all">{item}</span>
@@ -66,7 +66,7 @@ const Footer = () => {
 
           {/* Column 3: Connect */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-white light:!text-slate-900 font-space font-bold text-xl mb-2">Connect</h3>
+            <h3 className="text-white light:text-slate-900! font-space font-bold text-xl mb-2">Connect</h3>
             <div className="flex gap-4 mb-4">
                <a 
                   href={PERSONAL_INFO.linkedin} 
@@ -88,7 +88,7 @@ const Footer = () => {
             
             <a 
                href="mailto:hamzach794@gmail.com"
-               className="w-fit glass-card px-6 py-3 rounded-xl bg-linear-to-r from-purple-600/20 to-blue-600/20 border-white/10! hover:border-purple-500/50! font-bold text-white light:!text-slate-900 text-sm hover:scale-105 transition-all text-center"
+               className="w-fit glass-card px-6 py-3 rounded-xl bg-linear-to-r from-purple-600/20 to-blue-600/20 border-white/10! hover:border-purple-500/50! font-bold text-white light:text-slate-900! text-sm hover:scale-105 transition-all text-center"
             >
                Let's work together
             </a>

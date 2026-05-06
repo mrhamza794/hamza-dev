@@ -2,23 +2,35 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Braces, Database, GitBranch, Globe, LayoutDashboard, Palette, Server, ShieldCheck } from "lucide-react";
+import {
+  SiExpress,
+  SiGithub,
+  SiJavascript,
+  SiJsonwebtokens,
+  SiMongodb,
+  SiNextdotjs,
+  SiNodedotjs,
+  SiOpenapiinitiative,
+  SiReact,
+  SiRedux,
+  SiTailwindcss,
+  SiTypescript,
+} from "react-icons/si";
 
-
-// Assuming exact skills from constants if not exported exactly like this
+/** Brand icons + approximate brand colors (readable on skill card backgrounds) */
 const SKILLS = [
-  { name: "React", level: 95, icon: Globe },
-  { name: "Next.js", level: 93, icon: LayoutDashboard },
-  { name: "JavaScript (ES6+)", level: 92, icon: Braces },
-  { name: "TypeScript", level: 88, icon: Braces },
-  { name: "Redux Toolkit", level: 90, icon: GitBranch },
-  { name: "Tailwind CSS", level: 94, icon: Palette },
-  { name: "Node.js", level: 86, icon: Server },
-  { name: "Express.js", level: 85, icon: Server },
-  { name: "MongoDB", level: 84, icon: Database },
-  { name: "REST APIs", level: 90, icon: Globe },
-  { name: "JWT Auth", level: 87, icon: ShieldCheck },
-  { name: "Git & GitHub", level: 91, icon: GitBranch }
+  { name: "React", level: 95, Icon: SiReact, iconClass: "text-[#61DAFB]" },
+  { name: "Next.js", level: 93, Icon: SiNextdotjs, iconClass: "text-slate-900 dark:text-white" },
+  { name: "JavaScript (ES6+)", level: 92, Icon: SiJavascript, iconClass: "text-[#F7DF1E]" },
+  { name: "TypeScript", level: 88, Icon: SiTypescript, iconClass: "text-[#3178C6]" },
+  { name: "Redux Toolkit", level: 90, Icon: SiRedux, iconClass: "text-[#764ABC]" },
+  { name: "Tailwind CSS", level: 94, Icon: SiTailwindcss, iconClass: "text-[#06B6D4]" },
+  { name: "Node.js", level: 86, Icon: SiNodedotjs, iconClass: "text-[#339933]" },
+  { name: "Express.js", level: 85, Icon: SiExpress, iconClass: "text-slate-700 dark:text-slate-200" },
+  { name: "MongoDB", level: 84, Icon: SiMongodb, iconClass: "text-[#47A248]" },
+  { name: "REST APIs", level: 90, Icon: SiOpenapiinitiative, iconClass: "text-[#6BA539]" },
+  { name: "JWT Auth", level: 87, Icon: SiJsonwebtokens, iconClass: "text-pink-600 dark:text-pink-400" },
+  { name: "Git & GitHub", level: 91, Icon: SiGithub, iconClass: "text-slate-900 dark:text-white" },
 ];
 
 const SkillCard = ({ skill }) => {
@@ -50,8 +62,8 @@ const SkillCard = ({ skill }) => {
     >
       <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6">
         <div className="flex items-center gap-4 mb-4 transform-translate-z-10">
-          <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center">
-            <skill.icon size={20} className="text-cyan-400" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500/20 to-cyan-500/20 ring-1 ring-white/10 dark:ring-white/5 [&_svg]:h-[22px] [&_svg]:w-[22px]">
+            <skill.Icon className={skill.iconClass} aria-hidden />
           </div>
           <h3 className="text-lg font-bold font-space text-slate-800 dark:text-slate-200">{skill.name}</h3>
         </div>
