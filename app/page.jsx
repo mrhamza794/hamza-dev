@@ -12,6 +12,7 @@ const Hero3D = dynamic(() => import("@/components/Hero3D"), {
 })
 const About = dynamic(() => import("@/components/About"))
 const Skills = dynamic(() => import("@/components/Skills"))
+const Quote = dynamic(() => import("@/components/Quote"))
 const Projects = dynamic(() => import("@/components/Projects"), { 
   ssr: false,
   loading: () => <div className="w-full h-screen flex items-center justify-center text-slate-500">Loading Projects...</div>
@@ -49,6 +50,9 @@ export default function Home() {
 
         {/* Section 3: Skills */}
         <Skills />
+
+        {/* Quote — bridge between stack and work */}
+        <Quote />
 
         {/* Section 4: Projects (Lazy Mounted via Viewport) */}
         <div ref={projectsRef} className="min-h-screen">

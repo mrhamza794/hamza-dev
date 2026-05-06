@@ -28,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata = {
   title: "Hamza Choudhary | MERN Stack Developer & UI/UX Designer",
   description: PERSONAL_INFO.bio,
-  keywords: ["Next.js", "React", "MERN", "Full Stack", "Lahore", "Development Team Lead", "UI/UX", "3D Graphics"],
+  keywords: ["Next.js", "React", "MERN", "Full Stack", "Lahore", "REST API", "Node.js", "UI/UX"],
   authors: [{ name: PERSONAL_INFO.name }],
   openGraph: {
     title: "Hamza Choudhary | MERN Stack Developer",

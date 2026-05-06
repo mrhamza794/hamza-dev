@@ -36,7 +36,7 @@ const Footer = () => {
               HC
             </a>
             <p className="text-slate-400 font-medium max-w-xs">
-              Crafting digital experiences with modern web technologies and 3D graphics.
+              Crafting digital experiences with modern web technologies and robust REST APIs.
             </p>
             <div className="mt-4">
                <span className="inline-flex glass-card px-4 py-1.5 rounded-full text-xs font-medium text-purple-300 border-purple-500/20!">

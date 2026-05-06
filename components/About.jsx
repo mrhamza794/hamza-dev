@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Code, Palette, Box, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
+import { Code, Palette, Server, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { PERSONAL_INFO, EDUCATION, EXPERTISE } from "@/lib/constants";
 
 const hingeVariant = {
@@ -171,7 +171,7 @@ const About = () => {
               <h3 className="text-2xl font-bold font-space text-slate-200 light:!text-slate-900 mb-6">Core Competencies</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {EXPERTISE.map((item, idx) => {
-                const icons = { Code, Palette, Box };
+                const icons = { Code, Palette, Server };
                 return (
                   <ExpertiseCard
                     key={item.title}
