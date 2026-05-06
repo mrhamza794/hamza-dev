@@ -54,18 +54,33 @@ const Contact = () => {
     if (formState === "error" || formState === "idle") setFormState("typing");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormState("submitting");
 
-    setTimeout(() => {
-      if (!formData.email.includes("@") || formData.message.length < 10) {
-        setFormState("error");
-        setErrorMsg("Please provide a valid email and detailed message.");
-        return;
+    if (!formData.email.includes("@") || formData.message.length < 10) {
+      setFormState("error");
+      setErrorMsg("Please provide a valid email and detailed message.");
+      return;
+    }
+
+    setFormState("submitting");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong.");
       }
       setFormState("success");
-    }, 1500);
+    } catch (err) {
+      setFormState("error");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to send. Try again later.");
+    }
   };
 
   return (
