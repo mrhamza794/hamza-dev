@@ -1,156 +1,100 @@
-# Developer Portfolio
+# HamzaDev
 
-A modern, responsive developer portfolio built with Next.js, Tailwind CSS, and ShadCN UI. Features dark/light mode toggle, smooth animations, and a clean professional design.
-
-## 🚀 Features
-
-- **Modern Design**: Clean, professional layout with blue/slate color scheme
-- **Responsive**: Mobile-first design that works on all devices
-- **Dark/Light Mode**: Theme toggle with smooth transitions
-- **Smooth Scrolling**: Seamless navigation between sections
-- **Contact Form**: Functional contact form with validation
-- **SEO Optimized**: Meta tags, Open Graph, and structured data
-- **Performance**: Optimized for speed and accessibility
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS v4
-- **UI Components**: ShadCN UI
-- **Icons**: Lucide React
-- **Fonts**: Geist Sans & Geist Mono
-- **Deployment**: Vercel
-
-## 📦 Installation
-
-1. **Clone the repository**
-   \`\`\`bash
-   git clone https://github.com/yourusername/developer-portfolio.git
-   cd developer-portfolio
-   \`\`\`
-
-2. **Install dependencies**
-   \`\`\`bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   \`\`\`
-
-3. **Run the development server**
-   \`\`\`bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
-   \`\`\`
-
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 🔧 Configuration
-
-### Personal Information
-Update the following files with your information:
-
-- `app/layout.tsx` - SEO metadata and site information
-- `components/about-section.tsx` - Bio, skills, and timeline
-- `components/hero-section.tsx` - Name and tagline
-- `data/projects.ts` - Your projects and portfolio items
-- `components/site-header.tsx` - Social media links
-- `app/contact/page.tsx` - Contact information
-
-### Environment Variables
-Create a `.env.local` file for any environment-specific variables:
-
-\`\`\`env
-# Add any API keys or configuration here
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
-\`\`\`
-
-## 🎨 Customization
-
-### Colors
-The color scheme is defined in `app/globals.css`. The current theme uses:
-- **Primary**: Cyan-600 (#0891b2)
-- **Accent**: Emerald-500 (#10b981)
-- **Neutrals**: Slate colors for backgrounds and text
-
-### Content Sections
-- **Hero**: Main introduction and call-to-action
-- **About**: Bio, skills, and career timeline
-- **Services**: Service offerings and capabilities
-- **Projects**: Portfolio showcase with featured projects
-- **Contact**: Contact form and information
-
-## 📱 Pages
-
-- `/` - Main portfolio page with all sections
-- `/contact` - Dedicated contact page with form
-
-## 🚀 Deployment
-
-### Deploy to Vercel (Recommended)
-
-1. **Push to GitHub**
-   \`\`\`bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   \`\`\`
-
-2. **Deploy with Vercel**
-   - Visit [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Configure your domain (optional)
-   - Deploy!
-
-### Manual Deployment
-
-1. **Build the project**
-   \`\`\`bash
-   npm run build
-   \`\`\`
-
-2. **Start production server**
-   \`\`\`bash
-   npm start
-   \`\`\`
-
-## 📊 Performance
-
-- **Lighthouse Score**: 95+ across all metrics
-- **Core Web Vitals**: Optimized for LCP, FID, and CLS
-- **SEO**: Comprehensive meta tags and structured data
-- **Accessibility**: WCAG AA compliant
-
-## 🔍 SEO Features
-
-- Meta tags and Open Graph data
-- Structured data markup
-- XML sitemap
-- Robots.txt
-- Canonical URLs
-- Social media optimization
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/yourusername/developer-portfolio/issues).
-
-## 📞 Support
-
-If you have any questions or need help with setup, feel free to reach out:
-
-- Email: your.email@example.com
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourusername)
-- Twitter: [@yourusername](https://twitter.com/yourusername)
+A full-stack developer portfolio built with **Next.js** and **React**. It combines a glassmorphism UI, dark and light themes, scroll-driven motion, and an interactive **Three.js** hero background—focused on clarity, performance, and maintainability.
 
 ---
 
-**Built with ❤️ using Next.js and Tailwind CSS**
+## Features
+
+- **Pages Router** (`src/pages`) — classic `_app` / `_document` composition with straightforward routing.
+- **Theming** — `next-themes` with Tailwind `light` / `dark` variants and consistent typography.
+- **Motion** — Framer Motion for section entrances and interactions; **Lenis** for smooth scrolling.
+- **Hero** — `@react-three/fiber` + `@react-three/drei` + **three** for a lightweight canvas scene behind content.
+- **Sections** — Hero, About, Skills (Simple Icons), Quote, Projects, Contact, and Footer; viewport-based lazy loading where it helps.
+- **SEO basics** — Title, description, keywords, and Open Graph tags via `next/head` in `_app.jsx`.
+
+---
+
+## Tech stack
+
+| Area | Packages |
+|------|----------|
+| Framework | [Next.js](https://nextjs.org/) 16, [React](https://react.dev/) 19 |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) v4, PostCSS, `tw-animate-css` |
+| Motion | [Framer Motion](https://www.framer.com/motion/), [Lenis](https://lenis.darkroom.engineering/) |
+| 3D | [three](https://threejs.org/), `@react-three/fiber`, `@react-three/drei` |
+| Icons | [Lucide React](https://lucide.dev/), [React Icons](https://react-icons.github.io/react-icons/) (including Simple Icons) |
+| Themes | [next-themes](https://github.com/pacocoursey/next-themes) |
+
+Patches ([`patch-package`](https://github.com/ds300/patch-package)): `postinstall` applies `patches/@react-three+fiber+9.6.1.patch` to silence deprecated `THREE.Clock` usage from the library until upstream ships a fix.
+
+---
+
+## Project structure
+
+```
+src/
+├── pages/
+│   ├── _app.jsx       # Fonts, global providers, layout shell, document head
+│   ├── _document.jsx  # HTML document wrapper
+│   └── index.jsx      # Home page composition
+├── components/        # UI sections (Hero3D, Navigation, About, …)
+├── lib/
+│   └── constants.js   # Bio, skills metadata, quote text, etc.
+└── styles/
+    └── globals.css    # Tailwind entry + theme + component utilities
+```
+
+---
+
+## Getting started
+
+**Requirements:** Node.js 20+ recommended, npm (or compatible package manager).
+
+```bash
+git clone <your-repo-url>
+cd HamzaDev
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).  
+`npm install` runs `patch-package` automatically via `postinstall`.
+
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server (Turbopack) |
+| `npm run build` | Production build |
+| `npm start` | Serve production build locally |
+
+---
+
+## Customization
+
+1. **Copy and branding** — Edit `src/lib/constants.js` (name, title, bio, social URLs, quote, education, expertise labels).
+2. **Projects** — Project cards live in `src/components/Projects.jsx` (static list; adjust images, links, and copy there).
+3. **Skills** — Update the skills array in `src/components/Skills.jsx` (icons use `react-icons/si` where applicable).
+4. **SEO / meta** — Adjust defaults in `src/pages/_app.jsx` (`<Head>`: title, description, Open Graph).
+5. **Global look** — Colors, glass styles, and light-mode overrides are in `src/styles/globals.css`.
+
+There is no mandatory `.env` for the default static portfolio. Add `NEXT_PUBLIC_*` variables only if you introduce APIs or analytics later.
+
+---
+
+## Deployment
+
+Build a static-friendly Next output and deploy on **Vercel**, **Netlify**, or any Node host:
+
+```bash
+npm run build
+```
+
+Connect the repository to your host, set the install command to `npm install`, build to `npm run build`, and output/start per the host’s Next.js guidelines.
+
+---
+
+## License
+
+This repository is marked **private** in `package.json`. If you open-source it, add a `LICENSE` file and update this section accordingly.
