@@ -1,4 +1,4 @@
-# HamzaDev
+# hamza-dev
 
 A full-stack developer portfolio built with **Next.js** and **React**. It combines a glassmorphism UI, dark and light themes, scroll-driven motion, and an interactive **Three.js** hero background—focused on clarity, performance, and maintainability.
 
@@ -53,7 +53,7 @@ src/
 
 ```bash
 git clone <your-repo-url>
-cd HamzaDev
+cd hamza-dev
 npm install
 npm run dev
 ```

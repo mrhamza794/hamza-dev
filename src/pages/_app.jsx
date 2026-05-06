@@ -41,7 +41,7 @@ export default function App({ Component, pageProps }) {
         <meta property="og:title" content="Hamza Choudhary | MERN Stack Developer" />
         <meta property="og:description" content={PERSONAL_INFO.bio} />
         <meta property="og:url" content={PERSONAL_INFO.linkedin} />
-        <meta property="og:site_name" content="HamzaDev" />
+        <meta property="og:site_name" content="hamza-dev" />
         <meta property="og:type" content="website" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
