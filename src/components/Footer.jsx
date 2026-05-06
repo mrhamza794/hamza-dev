@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { ArrowRight, Heart } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";

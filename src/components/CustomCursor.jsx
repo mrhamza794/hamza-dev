@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 
 const TRAIL_DOTS = 5;
 
@@ -9,16 +7,15 @@ const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPointer, setIsPointer] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const pathname = usePathname();
+  const { pathname } = useRouter();
   const positionRef = useRef({ x: 0, y: 0 });
-  
-  // Store trail positions
+
   const trailRef = useRef(Array(TRAIL_DOTS).fill({ x: -100, y: -100 }));
   const [trail, setTrail] = useState(Array(TRAIL_DOTS).fill({ x: -100, y: -100 }));
 
   useEffect(() => {
-    // Only show custom cursor on non-touch devices
-    if (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
     setIsVisible(true);
 
     const moveCursor = (e) => {
@@ -43,13 +40,12 @@ const CustomCursor = () => {
 
     let clickables = attachListeners();
 
-    // Re-attach listeners when pathname changes or slightly later to catch late-rendered dynamic imports
     const timeout = setTimeout(() => {
-       clickables.forEach(el => {
-          el.removeEventListener("mouseenter", handlePointerEntry);
-          el.removeEventListener("mouseleave", handlePointerLeave);
-       });
-       clickables = attachListeners();
+      clickables.forEach((el) => {
+        el.removeEventListener("mouseenter", handlePointerEntry);
+        el.removeEventListener("mouseleave", handlePointerLeave);
+      });
+      clickables = attachListeners();
     }, 1000);
 
     return () => {
@@ -66,17 +62,15 @@ const CustomCursor = () => {
     if (!isVisible) return;
 
     let animationFrameId;
-    
+
     const updateTrail = () => {
       const currentPositions = [...trailRef.current];
-      
-      // The first dot follows the main cursor
+
       currentPositions[0] = {
         x: currentPositions[0].x + (positionRef.current.x - currentPositions[0].x) * 0.3,
         y: currentPositions[0].y + (positionRef.current.y - currentPositions[0].y) * 0.3,
       };
 
-      // Following dots follow the previous dot
       for (let i = 1; i < TRAIL_DOTS; i++) {
         currentPositions[i] = {
           x: currentPositions[i].x + (currentPositions[i - 1].x - currentPositions[i].x) * 0.25,
@@ -86,10 +80,10 @@ const CustomCursor = () => {
 
       trailRef.current = currentPositions;
       setTrail(currentPositions);
-      
+
       animationFrameId = requestAnimationFrame(updateTrail);
     };
-    
+
     updateTrail();
     return () => cancelAnimationFrame(animationFrameId);
   }, [isVisible]);
@@ -111,22 +105,22 @@ const CustomCursor = () => {
           filter: isPointer ? "blur(1px)" : "blur(0px)",
         }}
       />
-      
+
       {trail.map((pos, index) => (
-         <div
-           key={index}
-           className="fixed pointer-events-none z-9998 rounded-full mix-blend-screen will-change-transform"
-           style={{
-             left: `${pos.x}px`,
-             top: `${pos.y}px`,
-             width: `${8 - index}px`,
-             height: `${8 - index}px`,
-             backgroundColor: index % 2 === 0 ? "#8B5CF6" : "#06B6D4",
-             opacity: isPointer ? 0 : 0.8 - (index * 0.15),
-             transform: "translate(-50%, -50%)",
-             boxShadow: `0 0 ${10 - index}px currentColor`,
-           }}
-         />
+        <div
+          key={index}
+          className="fixed pointer-events-none z-9998 rounded-full mix-blend-screen will-change-transform"
+          style={{
+            left: `${pos.x}px`,
+            top: `${pos.y}px`,
+            width: `${8 - index}px`,
+            height: `${8 - index}px`,
+            backgroundColor: index % 2 === 0 ? "#8B5CF6" : "#06B6D4",
+            opacity: isPointer ? 0 : 0.8 - index * 0.15,
+            transform: "translate(-50%, -50%)",
+            boxShadow: `0 0 ${10 - index}px currentColor`,
+          }}
+        />
       ))}
     </>
   );

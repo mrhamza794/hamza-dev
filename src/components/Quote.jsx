@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { Quote as QuoteIcon } from "lucide-react";
 import { QUOTE } from "@/lib/constants";

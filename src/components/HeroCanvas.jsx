@@ -1,5 +1,3 @@
-"use client";
-
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera, Dodecahedron, Float } from "@react-three/drei";

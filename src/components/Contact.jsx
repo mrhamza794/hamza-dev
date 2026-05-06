@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useRef } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
 import { Send, Mail, User, MessageSquare, MapPin, Phone, AlertCircle } from "lucide-react";
