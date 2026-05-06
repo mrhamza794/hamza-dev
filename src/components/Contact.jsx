@@ -57,9 +57,29 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.email.includes("@") || formData.message.length < 10) {
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const name = String(fd.get("name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const message = String(fd.get("message") ?? "").trim();
+
+    setFormData({ name, email, message });
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!name) {
       setFormState("error");
-      setErrorMsg("Please provide a valid email and detailed message.");
+      setErrorMsg("Please enter your name.");
+      return;
+    }
+    if (!emailOk) {
+      setFormState("error");
+      setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+    if (message.length < 10) {
+      setFormState("error");
+      setErrorMsg("Please add more detail to your message (at least 10 characters).");
       return;
     }
 
@@ -70,7 +90,7 @@ const Contact = () => {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ name, email, message }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -130,14 +150,16 @@ const Contact = () => {
               Send a Message
             </motion.h3>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative" noValidate>
               <motion.div variants={formHingeVariant} className="relative group">
                 <input
                   type="text"
                   name="name"
+                  autoComplete="name"
                   required
                   value={formData.name}
                   onChange={handleInputChange}
+                  onInput={handleInputChange}
                   placeholder="Your Name"
                   className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
@@ -148,9 +170,11 @@ const Contact = () => {
                 <input
                   type="email"
                   name="email"
+                  autoComplete="email"
                   required
                   value={formData.email}
                   onChange={handleInputChange}
+                  onInput={handleInputChange}
                   placeholder="Email Address"
                   className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
                 />
@@ -160,10 +184,12 @@ const Contact = () => {
               <motion.div variants={formHingeVariant} className="relative group">
                 <textarea
                   name="message"
+                  autoComplete="off"
                   required
                   rows={4}
                   value={formData.message}
                   onChange={handleInputChange}
+                  onInput={handleInputChange}
                   placeholder="Project details..."
                   className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
                 />
