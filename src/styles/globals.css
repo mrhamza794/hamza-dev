@@ -45,6 +45,11 @@
 }
 
 :root {
+  --nav-offset-top: 1rem;
+  --nav-bar-height: 4.5rem;
+  --nav-total-height: calc(var(--nav-offset-top) + var(--nav-bar-height));
+  --hero-viewport-height: calc(100dvh - var(--nav-total-height));
+
   --bg-gradient: linear-gradient(180deg, rgb(2, 6, 23) 0%, rgb(15, 23, 42) 100%);
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   --secondary-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
@@ -152,6 +157,60 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+}
+
+/* Navbar + hero = one screen (100dvh) */
+.hero-viewport {
+  box-sizing: border-box;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding-top: var(--nav-total-height);
+  overflow: hidden;
+}
+
+.hero-viewport__inner {
+  height: 100%;
+  min-height: 0;
+}
+
+.hero-viewport .hero-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.hero-viewport .hero-panel:hover {
+  transform: none;
+}
+
+.hero-viewport .hero-main-col {
+  gap: clamp(1.75rem, 5vh, 3.25rem);
+}
+
+.hero-viewport .hero-intro-block {
+  gap: clamp(1rem, 2.5vh, 1.35rem);
+}
+
+.hero-viewport .hero-actions-block {
+  gap: clamp(1.25rem, 3vh, 1.75rem);
+}
+
+.hero-viewport .hero-side-meta {
+  gap: clamp(1rem, 2.5vh, 1.35rem);
+}
+
+@media (max-height: 680px) and (max-width: 1023px) {
+  .hero-viewport .hero-logo-panel {
+    display: none;
+  }
+
+  .hero-viewport .hero-side-col {
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+
+  .hero-viewport .hero-intro-block {
+    gap: 0.5rem !important;
   }
 }
 

@@ -32,7 +32,7 @@ const TypingSubtitle = ({ texts }) => {
   }, [subIndex, index, reverse, texts]);
 
   return (
-    <div className="text-base sm:text-lg md:text-xl font-medium text-cyan-400 font-inter mb-5 md:mb-6 flex items-center gap-2">
+    <div className="text-base sm:text-lg font-medium text-cyan-400 font-inter flex items-center gap-2">
       <Code size={20} className="shrink-0 md:w-6 md:h-6" />
       <span>{texts[index].substring(0, subIndex)}</span>
       <span className="w-0.5 h-6 md:h-7 bg-cyan-400 animate-pulse ml-0.5" />
@@ -76,7 +76,7 @@ const LetterByLetter = ({ text }) => {
 
   return (
     <motion.h1
-      className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-space mb-4 sm:mb-5 tracking-tight flex flex-wrap items-baseline gap-x-1.5 sm:gap-x-2 md:gap-x-3"
+      className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold font-space tracking-tight flex flex-wrap items-baseline gap-x-1.5 sm:gap-x-2 md:gap-x-3 leading-[1.1]"
       variants={container}
       initial="hidden"
       animate="visible"
@@ -131,24 +131,25 @@ const Hero3D = () => {
   ];
 
   return (
-    <section className="relative min-h-dvh flex items-center overflow-hidden pt-20 pb-8 sm:pt-24 sm:pb-10 md:pt-28 md:pb-12">
+    <section className="hero-viewport__inner relative flex h-full min-h-0 items-stretch overflow-hidden">
       <div className="absolute inset-0 z-1 pointer-events-none">
          <HeroCanvas />
       </div>
 
-      <div className="relative z-20 isolate mx-auto w-full max-w-[1800px] px-4 sm:px-6 lg:px-10 xl:px-14">
+      <div className="relative z-20 isolate mx-auto flex h-full min-h-0 w-full max-w-[1800px] px-4 py-3 sm:px-6 sm:py-4 lg:px-10 xl:px-12">
         <motion.div
           style={{ y: y1, opacity, scale }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="hero-panel relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-linear-to-br from-white/9 via-white/4 to-transparent shadow-[0_8px_40px_rgba(15,23,42,0.06)] backdrop-blur-md backdrop-saturate-125 dark:border-white/10 dark:from-white/[0.07] dark:via-white/3 dark:to-transparent dark:shadow-[0_12px_48px_rgba(0,0,0,0.25)] dark:backdrop-blur-md"
+          className="hero-panel relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl sm:rounded-2xl lg:rounded-3xl border border-white/15 bg-linear-to-br from-white/9 via-white/4 to-transparent shadow-[0_8px_40px_rgba(15,23,42,0.06)] backdrop-blur-md backdrop-saturate-125 dark:border-white/10 dark:from-white/[0.07] dark:via-white/3 dark:to-transparent dark:shadow-[0_12px_48px_rgba(0,0,0,0.25)] dark:backdrop-blur-md"
         >
           <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-purple-500/4 via-transparent to-cyan-500/6" />
           <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 dark:ring-white/5" />
 
-          <div className="relative grid grid-cols-1 gap-10 p-6 sm:p-8 md:p-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.45fr)] lg:gap-x-14 lg:gap-y-0 xl:gap-x-20 xl:p-12">
-            <div className="flex min-w-0 flex-col gap-7 sm:gap-8">
+          <div className="hero-content-grid relative grid min-h-0 flex-1 grid-cols-1 gap-8 overflow-hidden p-4 sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.38fr)] lg:gap-x-10 lg:p-8 xl:gap-x-14">
+            <div className="hero-main-col flex min-h-0 min-w-0 flex-col justify-between">
+              <div className="hero-intro-block flex flex-col">
               <motion.div
                 initial={{ x: -24, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -165,34 +166,36 @@ const Hero3D = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.2, duration: 1 }}
-                className="max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base md:text-[0.95rem] lg:max-w-none lg:text-lg"
+                className="max-w-lg text-sm leading-[1.7] text-slate-600 dark:text-slate-300 sm:text-base sm:leading-[1.75] lg:max-w-xl"
               >
                 {PERSONAL_INFO.bio}
               </motion.p>
+              </div>
 
-              <motion.div
-                initial={{ y: 24, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1.45, duration: 0.75 }}
-                className="grid grid-cols-3 gap-4 border-y border-white/10 py-8 dark:border-white/8 sm:gap-8 sm:py-9"
-              >
-                {stats.map((stat) => (
-                  <div key={stat.label} className="text-center sm:text-left">
-                    <div className="mb-2 flex justify-center text-cyan-600 sm:justify-start dark:text-cyan-400">{stat.icon}</div>
-                    <p className="font-space text-xl font-bold tabular-nums text-gradient sm:text-2xl">{stat.value}</p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                      {stat.label}
-                    </p>
-                  </div>
-                ))}
-              </motion.div>
+              <div className="hero-actions-block flex flex-col">
+                <motion.div
+                  initial={{ y: 24, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.45, duration: 0.75 }}
+                  className="hero-stats-row flex flex-wrap gap-6 sm:gap-10"
+                >
+                  {stats.map((stat) => (
+                    <div key={stat.label} className="text-center sm:text-left">
+                      <div className="mb-1.5 flex justify-center text-cyan-600 sm:justify-start dark:text-cyan-400">{stat.icon}</div>
+                      <p className="font-space text-xl font-bold tabular-nums text-gradient sm:text-2xl">{stat.value}</p>
+                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </motion.div>
 
-              <motion.div
-                initial={{ y: 24, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1.75, duration: 0.75 }}
-                className="flex flex-wrap gap-3 sm:gap-4"
-              >
+                <motion.div
+                  initial={{ y: 24, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.75, duration: 0.75 }}
+                  className="flex flex-wrap gap-3 sm:gap-4"
+                >
                 <button
                   type="button"
                   onClick={() => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })}
@@ -212,25 +215,27 @@ const Hero3D = () => {
                   <Mail size={18} className="sm:h-5 sm:w-5" />
                 </button>
               </motion.div>
+              </div>
             </div>
 
             <motion.div
               initial={{ opacity: 0, x: 28 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="relative z-30 flex flex-col gap-8 border-t border-white/10 pt-10 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-2 xl:pl-14 dark:border-white/8"
+              className="hero-side-col relative z-30 flex min-h-0 flex-col justify-between border-t border-white/10 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 xl:pl-10 dark:border-white/8"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8 }}
-                className="logo-backdrop-panel relative min-h-[220px] w-full overflow-hidden rounded-2xl bg-transparent sm:min-h-[260px] lg:min-h-[380px] lg:rounded-3xl"
+                className="hero-logo-panel logo-backdrop-panel relative min-h-[8rem] w-full flex-1 overflow-hidden rounded-2xl bg-transparent sm:min-h-[10rem] lg:min-h-[12rem] lg:rounded-2xl"
               >
                 <Logo variant="backdrop" clickable={false} />
               </motion.div>
 
+              <div className="hero-side-meta flex flex-col">
               <div>
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Stack</p>
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Stack</p>
                 <div className="flex flex-wrap gap-5 sm:gap-6">
                   {heroStack.map(({ Icon, label, color }) => (
                     <Icon
@@ -248,7 +253,7 @@ const Hero3D = () => {
                 <span>{PERSONAL_INFO.location}</span>
               </div>
 
-              <div className="mt-auto flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-4">
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -276,6 +281,7 @@ const Hero3D = () => {
                     <FaLinkedinIn className="h-[18px] w-[18px]" />
                   </a>
                 </div>
+              </div>
               </div>
             </motion.div>
           </div>

@@ -65,10 +65,10 @@ const Navigation = () => {
     }
   };
 
-  const navHeight = isScrolled ? 60 : 80;
+  const navHeight = isScrolled ? 56 : 72;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 pt-5">
+    <nav className="fixed top-0 left-0 right-0 z-50 pt-4">
       <motion.div
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

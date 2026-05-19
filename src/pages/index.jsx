@@ -6,7 +6,7 @@ import { useInView } from "framer-motion";
 
 const Hero3D = dynamic(() => import("@/components/Hero3D"), {
   ssr: false,
-  loading: () => <div className="w-full h-screen bg-linear-to-br from-slate-900 to-slate-950" />,
+  loading: () => <div className="hero-viewport w-full bg-linear-to-br from-slate-900 to-slate-950" />,
 });
 const About = dynamic(() => import("@/components/About"));
 const Skills = dynamic(() => import("@/components/Skills"));
@@ -42,7 +42,7 @@ export default function Home() {
       <Navigation />
 
       <main>
-        <div id="hero">
+        <div id="hero" className="hero-viewport">
           <Hero3D />
         </div>
 
