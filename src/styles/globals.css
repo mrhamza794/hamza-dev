@@ -37,6 +37,11 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  --animate-spin-slow: spin-slow 3s linear infinite;
 }
 
 :root {
@@ -270,4 +275,116 @@ footer .glass-card:hover {
   z-index: 9998;
   transform: translate(-50%, -50%);
   transition: all 0.15s ease-out;
+}
+
+/* Logo glow effects */
+.logo-glow {
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6))
+    drop-shadow(0 0 16px rgba(6, 182, 212, 0.4));
+  transition: filter 0.3s ease;
+}
+
+.logo-glow:hover {
+  filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8))
+    drop-shadow(0 0 24px rgba(6, 182, 212, 0.6))
+    drop-shadow(0 0 32px rgba(236, 72, 153, 0.4));
+}
+
+.light .logo-glow {
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.3))
+    drop-shadow(0 0 8px rgba(6, 182, 212, 0.2));
+}
+
+.light .logo-glow:hover {
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.4))
+         drop-shadow(0 0 12px rgba(6, 182, 212, 0.3));
+}
+
+/* Panels that host backdrop logos — stay visually empty */
+.logo-backdrop-panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Full-area logos — melt into whatever is behind (no box, no shadow) */
+.logo-backdrop-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+}
+
+.logo-blend {
+  mix-blend-mode: soft-light;
+  opacity: 0.62;
+  filter: contrast(1.08) saturate(1.12);
+  transform: scale(1.12);
+  -webkit-mask-image: radial-gradient(
+    ellipse 88% 82% at 50% 44%,
+    #000 8%,
+    rgba(0, 0, 0, 0.85) 38%,
+    transparent 72%
+  );
+  mask-image: radial-gradient(
+    ellipse 88% 82% at 50% 44%,
+    #000 8%,
+    rgba(0, 0, 0, 0.85) 38%,
+    transparent 72%
+  );
+}
+
+.dark .logo-blend {
+  mix-blend-mode: lighten;
+  opacity: 0.55;
+}
+
+@supports (mix-blend-mode: plus-lighter) {
+  .dark .logo-blend {
+    mix-blend-mode: plus-lighter;
+    opacity: 0.5;
+  }
+}
+
+.light .logo-blend {
+  mix-blend-mode: multiply;
+  opacity: 0.48;
+  filter: contrast(1.05) saturate(1.05);
+}
+
+/* Let backdrop logos blend through glass panels */
+.hero-panel .logo-backdrop-panel,
+#about .logo-backdrop-panel {
+  isolation: auto;
+}
+
+/* Text/readability scrim — only at bottom, never over whole logo */
+.logo-text-scrim {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 58%;
+  background: linear-gradient(
+    to top,
+    rgb(2 6 23 / 0.92) 0%,
+    rgb(2 6 23 / 0.45) 45%,
+    transparent 100%
+  );
+}
+
+.light .logo-text-scrim {
+  background: linear-gradient(
+    to top,
+    rgb(248 250 252 / 0.96) 0%,
+    rgb(248 250 252 / 0.5) 45%,
+    transparent 100%
+  );
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }

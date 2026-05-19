@@ -5,6 +5,7 @@ import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { SiNextdotjs, SiNodedotjs, SiReact, SiTailwindcss, SiTypescript } from "react-icons/si";
 import { PERSONAL_INFO } from "@/lib/constants";
 import HeroCanvas from "./HeroCanvas";
+import Logo from "./Logo";
 
 const TypingSubtitle = ({ texts }) => {
   const [index, setIndex] = useState(0);
@@ -129,22 +130,13 @@ const Hero3D = () => {
     { Icon: SiTailwindcss, label: "Tailwind", color: "text-sky-600 dark:text-sky-400" },
   ];
 
-  const initials = PERSONAL_INFO.name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
     <section className="relative min-h-dvh flex items-center overflow-hidden pt-20 pb-8 sm:pt-24 sm:pb-10 md:pt-28 md:pb-12">
-      {/* Canvas sits behind all hero UI (see also HeroCanvas -z-10) */}
       <div className="absolute inset-0 z-1 pointer-events-none">
          <HeroCanvas />
       </div>
 
       <div className="relative z-20 isolate mx-auto w-full max-w-[1800px] px-4 sm:px-6 lg:px-10 xl:px-14">
-        {/* Single combined glass card — lighter blur + transparency so the 3D/particles read through */}
         <motion.div
           style={{ y: y1, opacity, scale }}
           initial={{ opacity: 0, y: 20 }}
@@ -156,7 +148,6 @@ const Hero3D = () => {
           <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 dark:ring-white/5" />
 
           <div className="relative grid grid-cols-1 gap-10 p-6 sm:p-8 md:p-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.45fr)] lg:gap-x-14 lg:gap-y-0 xl:gap-x-20 xl:p-12">
-            {/* Main column */}
             <div className="flex min-w-0 flex-col gap-7 sm:gap-8">
               <motion.div
                 initial={{ x: -24, opacity: 0 }}
@@ -179,7 +170,6 @@ const Hero3D = () => {
                 {PERSONAL_INFO.bio}
               </motion.p>
 
-              {/* Stats — one airy row, no opaque tiles */}
               <motion.div
                 initial={{ y: 24, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -224,22 +214,20 @@ const Hero3D = () => {
               </motion.div>
             </div>
 
-            {/* Side column — sparse: identity, icons only, location, links */}
             <motion.div
               initial={{ opacity: 0, x: 28 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="relative z-30 flex flex-col gap-8 border-t border-white/10 pt-10 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-2 xl:pl-14 dark:border-white/8"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-purple-600 to-cyan-600 font-space text-base font-bold text-white shadow-md shadow-purple-500/20">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-space text-base font-bold text-slate-900 dark:text-white sm:text-lg">{PERSONAL_INFO.name}</p>
-                  <p className="truncate text-sm text-slate-600 dark:text-slate-400">{PERSONAL_INFO.title}</p>
-                </div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8 }}
+                className="logo-backdrop-panel relative min-h-[220px] w-full overflow-hidden rounded-2xl bg-transparent sm:min-h-[260px] lg:min-h-[380px] lg:rounded-3xl"
+              >
+                <Logo variant="backdrop" clickable={false} />
+              </motion.div>
 
               <div>
                 <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Stack</p>

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Code, Palette, Server, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { PERSONAL_INFO, EDUCATION, EXPERTISE } from "@/lib/constants";
+import Logo from "./Logo";
 
 const hingeVariant = {
   hidden: { opacity: 0, scale: 0.8, rotateX: 45, y: 100, transformPerspective: 1000 },
@@ -109,34 +110,25 @@ const About = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-20 items-center">
           {/* Left: Profile Visual */}
           <div className="relative group">
-            {/* Rotating Gradient Border */}
-            <div className="absolute -inset-1 bg-linear-to-r from-purple-500 via-cyan-500 to-pink-500 rounded-[2.5rem] blur opacity-30 group-hover:opacity-60 animate-spin-slow transition duration-1000" />
-            
-            <div className="relative aspect-square glass-card bg-black/40! light:bg-white/75! backdrop-blur-3xl! border-white/10! light:border-slate-300/60! rounded-[2.5rem] flex items-center justify-center overflow-hidden">
-              {/* Floating 3D Cubes (CSS) */}
-              <div className="absolute inset-0 pointer-events-none opacity-20">
-                <div className="absolute top-10 left-10 w-8 h-8 border border-white/20 animate-float" style={{ transformStyle: 'preserve-3d', rotate: '45deg' }} />
-                <div className="absolute bottom-20 right-10 w-12 h-12 border border-white/20 animate-float" style={{ animationDelay: '1s', rotate: '-20deg' }} />
-                <div className="absolute top-1/2 right-1/4 w-6 h-6 border border-white/20 animate-float" style={{ animationDelay: '2s' }} />
-              </div>
+            <div className="logo-backdrop-panel relative aspect-square min-h-[280px] overflow-hidden rounded-[2.5rem] bg-transparent">
+              <Logo variant="backdrop" clickable={false} />
+              <div className="logo-text-scrim" aria-hidden />
 
-              {/* Initial "H" */}
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 0.2 }}
-                transition={{ duration: 1 }}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="text-[12rem] font-bold font-space text-gradient select-none"
+                className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 p-6 sm:p-8"
               >
-                H
-              </motion.div>
-
-              {/* Stats Overlay */}
-              <div className="absolute bottom-8 left-8 right-8 flex flex-col gap-3">
+                <div className="mb-2">
+                  <p className="font-space text-xl font-bold text-white light:text-slate-900">{PERSONAL_INFO.name}</p>
+                  <p className="text-sm text-cyan-400">{PERSONAL_INFO.role}</p>
+                </div>
                 <StatCard icon={MapPin} text={PERSONAL_INFO.location} delay={0.4} />
-                <StatCard icon={Briefcase} text={PERSONAL_INFO.role} delay={0.5} />
+                <StatCard icon={Briefcase} text={PERSONAL_INFO.title} delay={0.5} />
                 <StatCard icon={Calendar} text="Since August 2023" delay={0.6} />
-              </div>
+              </motion.div>
             </div>
           </div>
 

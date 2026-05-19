@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Heart } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
+import Logo from "./Logo";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -30,9 +31,10 @@ const Footer = () => {
           
           {/* Column 1: Branding */}
           <div className="flex flex-col gap-4">
-            <a href="#" onClick={(e) => handleNavClick(e, "hero")} className="text-4xl font-bold font-space text-gradient inline-block">
-              HC
-            </a>
+            <div className="flex items-center gap-3">
+              <Logo size={48} mobileSize={40} showName={false} clickable />
+              <h3 className="text-2xl font-space font-bold text-gradient">HC</h3>
+            </div>
             <p className="text-slate-400 font-medium max-w-xs">
               Crafting digital experiences with modern web technologies and robust REST APIs.
             </p>

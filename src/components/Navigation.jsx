@@ -4,6 +4,7 @@ import { Menu, Moon, Sun, X } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
 import { useTheme } from "next-themes";
+import Logo from "./Logo";
 
 const NAV_LINKS = [
   { name: "About", href: "#about" },
@@ -72,10 +73,7 @@ const Navigation = () => {
         }}
         className={`mx-auto w-[90%] max-w-[1400px] flex items-center justify-between px-10 transition-all duration-300 glass-card rounded-2xl! lg:rounded-b-3xl! lg:rounded-t-none!`}
       >
-        {/* Logo */}
-        <a href="#" className="text-2xl font-bold font-space text-gradient">
-          HC
-        </a>
+        <Logo size={isScrolled ? 36 : 40} mobileSize={32} showName={false} clickable />
 
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-10">
