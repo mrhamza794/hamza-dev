@@ -4,7 +4,6 @@ import { Menu, Moon, Sun, X } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
 import { useTheme } from "next-themes";
-import Logo from "./Logo";
 
 const NAV_LINKS = [
   { name: "About", href: "#about" },
@@ -45,6 +44,11 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const scrollToHero = () => {
+    document.querySelector("#hero")?.scrollIntoView({ behavior: "smooth" });
+    setIsMobileMenuOpen(false);
+  };
+
   const handleClick = (e, href) => {
     e.preventDefault();
     const element = document.querySelector(href);
@@ -69,27 +73,25 @@ const Navigation = () => {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="mx-auto flex w-[90%] max-w-[1400px] items-end gap-2 sm:gap-3"
+        style={{
+          height: navHeight,
+          backdropFilter: "blur(20px) saturate(180%)",
+        }}
+        className="nav-glass-bar mx-auto flex w-[90%] max-w-[1400px] items-center justify-between gap-4 px-6 transition-all duration-300 glass-card rounded-2xl! sm:px-10 lg:rounded-b-3xl! lg:rounded-t-none!"
       >
-        <Logo
-          variant="brand"
-          fillHeight
-          showName={false}
-          clickable
-          className={`logo-nav-brand logo-nav-outside shrink-0 transition-all duration-300 ${
-            isScrolled ? "h-[60px]" : "h-[80px]"
+        <button
+          type="button"
+          onClick={scrollToHero}
+          className={`shrink-0 border-0 bg-transparent p-0 font-space font-bold text-gradient transition-all duration-300 hover:opacity-90 ${
+            isScrolled ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
           }`}
-        />
-
-        <motion.div
-          style={{
-            height: navHeight,
-            backdropFilter: "blur(20px) saturate(180%)",
-          }}
-          className="nav-glass-bar flex min-w-0 flex-1 items-center justify-between px-6 transition-all duration-300 glass-card rounded-2xl! sm:px-10 lg:rounded-b-3xl! lg:rounded-t-none!"
+          aria-label="Scroll to top"
         >
+          {PERSONAL_INFO.name}
+        </button>
+
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-10">
+        <div className="hidden md:flex items-center gap-10 ml-auto">
           {NAV_LINKS.map((link) => (
             <div key={link.name} className="relative group">
               <a
@@ -147,7 +149,6 @@ const Navigation = () => {
         >
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
-        </motion.div>
       </motion.div>
 
       {/* Mobile Menu Overlay */}
