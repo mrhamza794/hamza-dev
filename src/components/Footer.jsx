@@ -22,7 +22,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="relative w-full glass-card bg-black/60! light:bg-white/80! backdrop-blur-xl border-t border-white/10 light:border-slate-300/60! rounded-none! overflow-x-hidden overflow-y-hidden">
+    <footer className="footer-chrome relative w-full border-t border-white/10 light:border-slate-300/60! bg-black/25! light:bg-white/35! backdrop-blur-xl rounded-none! overflow-x-hidden overflow-y-hidden">
       {/* Background Decor */}
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-300/30 dark:bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
 
@@ -30,18 +30,22 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-8 mb-16">
           
           {/* Column 1: Branding */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <Logo size={48} mobileSize={40} showName={false} clickable />
-              <h3 className="text-2xl font-space font-bold text-gradient">HC</h3>
-            </div>
-            <p className="text-slate-400 font-medium max-w-xs">
+          <div className="footer-brand-col flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={() => document.querySelector("#hero")?.scrollIntoView({ behavior: "smooth" })}
+              className="logo-chrome-slot relative h-28 w-36 max-w-full overflow-visible border-0 bg-transparent p-0 cursor-pointer sm:h-32 sm:w-40"
+              aria-label="Back to top"
+            >
+              <Logo variant="backdrop" clickable={false} />
+            </button>
+            <p className="text-slate-400 font-medium max-w-xs leading-relaxed">
               Crafting digital experiences with modern web technologies and robust REST APIs.
             </p>
-            <div className="mt-4">
-               <span className="inline-flex glass-card px-4 py-1.5 rounded-full text-xs font-medium text-purple-300 border-purple-500/20!">
-                 Made with Next.js
-               </span>
+            <div>
+              <span className="inline-flex glass-card px-4 py-1.5 rounded-full text-xs font-medium text-purple-300 border-purple-500/20!">
+                Built with Next.js
+              </span>
             </div>
           </div>
 

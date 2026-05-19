@@ -9,6 +9,7 @@ export default function Logo({
   showName = false,
   clickable = true,
   variant = "icon",
+  fillHeight = false,
 }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -20,7 +21,7 @@ export default function Logo({
   }, []);
 
   useEffect(() => {
-    if (variant === "backdrop") return;
+    if (variant === "backdrop" || fillHeight) return;
 
     const handleResize = () => {
       setCurrentSize(window.innerWidth < 768 ? mobileSize : size);
@@ -29,7 +30,7 @@ export default function Logo({
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [size, mobileSize, variant]);
+  }, [size, mobileSize, variant, fillHeight]);
 
   useEffect(() => {
     setIsLoaded(false);
@@ -69,9 +70,38 @@ export default function Logo({
     );
   }
 
-  const logoMark = (
+  const imageMarkClass = variant === "brand" ? "logo-blend logo-blend-chrome" : "logo-glow";
+
+  const logoMark = fillHeight ? (
     <div
-      className="relative shrink-0 transition-all duration-300 hover:scale-105"
+      className={`relative h-full aspect-square transition-all duration-300 ${
+        variant === "brand" ? "logo-brand-wrap" : "hover:scale-105"
+      }`}
+    >
+      {!isLoaded && (
+        <div
+          className="absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 animate-pulse"
+          aria-hidden
+        />
+      )}
+      <Image
+        src={src}
+        alt="Hamza Choudhary Logo"
+        fill
+        className={`object-contain ${imageMarkClass} transition-opacity duration-300 ${
+          isLoaded ? "opacity-100" : "opacity-0"
+        }`}
+        onLoad={() => setIsLoaded(true)}
+        priority
+        quality={100}
+        sizes="80px"
+      />
+    </div>
+  ) : (
+    <div
+      className={`relative shrink-0 transition-all duration-300 ${
+        variant === "brand" ? "logo-brand-wrap" : "hover:scale-105"
+      }`}
       style={{ width: currentSize, height: currentSize }}
     >
       {!isLoaded && (
@@ -86,7 +116,7 @@ export default function Logo({
         alt="Hamza Choudhary Logo"
         width={currentSize}
         height={currentSize}
-        className={`h-full w-full object-contain logo-glow transition-opacity duration-300 ${
+        className={`h-full w-full object-contain ${imageMarkClass} transition-opacity duration-300 ${
           isLoaded ? "opacity-100" : "opacity-0"
         }`}
         onLoad={() => setIsLoaded(true)}
@@ -98,7 +128,11 @@ export default function Logo({
   );
 
   const label = showName ? (
-    <span className="text-xl font-space font-bold text-gradient whitespace-nowrap">
+    <span
+      className={`font-space font-bold text-gradient whitespace-nowrap ${
+        variant === "brand" ? "text-base md:text-lg" : "text-xl"
+      }`}
+    >
       Hamza Choudhary
     </span>
   ) : null;
@@ -108,7 +142,7 @@ export default function Logo({
       <button
         type="button"
         onClick={handleClick}
-        className={`flex items-center gap-3 cursor-pointer border-0 bg-transparent p-0 ${className}`}
+        className={`flex h-full items-center cursor-pointer border-0 bg-transparent p-0 ${showName ? "gap-3" : ""} ${className}`}
         aria-label="Scroll to top"
       >
         {logoMark}

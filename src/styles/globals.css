@@ -357,8 +357,64 @@ footer .glass-card:hover {
 
 /* Let backdrop logos blend through glass panels */
 .hero-panel .logo-backdrop-panel,
-#about .logo-backdrop-panel {
+#about .logo-backdrop-panel,
+.logo-footer-panel {
   isolation: auto;
+}
+
+/* Chrome logos (nav beside bar, footer) — same blend as hero/about */
+.logo-blend-chrome {
+  transform: scale(1.14);
+}
+
+.logo-brand-wrap {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logo-nav-outside,
+.logo-chrome-slot {
+  background: transparent !important;
+  isolation: auto;
+}
+
+.logo-nav-outside:hover .logo-blend-chrome {
+  transform: scale(1.18);
+}
+
+/* Nav glass bar: no hover lift; logo sits outside this panel */
+nav .nav-glass-bar.glass-card:hover {
+  transform: none;
+}
+
+nav .nav-glass-bar.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.light nav .nav-glass-bar.glass-card {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.logo-chrome-slot {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+footer .logo-chrome-slot .logo-blend {
+  transform: scale(1.18);
+}
+
+/* Footer: let brand column show page tones through */
+footer .footer-brand-col {
+  background: transparent;
+  isolation: auto;
+}
+
+footer.footer-chrome {
+  box-shadow: none;
+}
+
+footer.footer-chrome:hover {
+  transform: none;
 }
 
 /* Text/readability scrim — only at bottom, never over whole logo */

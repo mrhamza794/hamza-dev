@@ -61,20 +61,33 @@ const Navigation = () => {
     }
   };
 
+  const navHeight = isScrolled ? 60 : 80;
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 pt-5">
       <motion.div
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        style={{
-          height: isScrolled ? "60px" : "80px",
-          backdropFilter: "blur(20px) saturate(180%)",
-        }}
-        className={`mx-auto w-[90%] max-w-[1400px] flex items-center justify-between px-10 transition-all duration-300 glass-card rounded-2xl! lg:rounded-b-3xl! lg:rounded-t-none!`}
+        className="mx-auto flex w-[90%] max-w-[1400px] items-end gap-2 sm:gap-3"
       >
-        <Logo size={isScrolled ? 36 : 40} mobileSize={32} showName={false} clickable />
+        <Logo
+          variant="brand"
+          fillHeight
+          showName={false}
+          clickable
+          className={`logo-nav-brand logo-nav-outside shrink-0 transition-all duration-300 ${
+            isScrolled ? "h-[60px]" : "h-[80px]"
+          }`}
+        />
 
+        <motion.div
+          style={{
+            height: navHeight,
+            backdropFilter: "blur(20px) saturate(180%)",
+          }}
+          className="nav-glass-bar flex min-w-0 flex-1 items-center justify-between px-6 transition-all duration-300 glass-card rounded-2xl! sm:px-10 lg:rounded-b-3xl! lg:rounded-t-none!"
+        >
         {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-10">
           {NAV_LINKS.map((link) => (
@@ -134,6 +147,7 @@ const Navigation = () => {
         >
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
+        </motion.div>
       </motion.div>
 
       {/* Mobile Menu Overlay */}
