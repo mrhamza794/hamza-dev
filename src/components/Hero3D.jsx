@@ -228,7 +228,7 @@ const Hero3D = () => {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8 }}
-                className="hero-logo-panel logo-backdrop-panel relative min-h-[8rem] w-full flex-1 overflow-hidden rounded-2xl bg-transparent sm:min-h-[10rem] lg:min-h-[12rem] lg:rounded-2xl"
+                className="hero-logo-panel logo-backdrop-panel relative min-h-32 w-full flex-1 overflow-hidden rounded-2xl bg-transparent sm:min-h-40 lg:min-h-48 lg:rounded-2xl"
               >
                 <Logo variant="backdrop" clickable={false} />
               </motion.div>
