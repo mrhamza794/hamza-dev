@@ -9,7 +9,9 @@ const Hero3D = dynamic(() => import("@/components/Hero3D"), {
   loading: () => <div className="hero-viewport w-full bg-linear-to-br from-slate-900 to-slate-950" />,
 });
 const About = dynamic(() => import("@/components/About"));
+const DeveloperStats = dynamic(() => import("@/components/DeveloperStats"));
 const Skills = dynamic(() => import("@/components/Skills"));
+const BugGame = dynamic(() => import("@/components/BugGame"), { ssr: false });
 const Quote = dynamic(() => import("@/components/Quote"));
 const Projects = dynamic(() => import("@/components/Projects"), {
   ssr: false,
@@ -48,7 +50,11 @@ export default function Home() {
 
         <About />
 
+        <DeveloperStats />
+
         <Skills />
+
+        <BugGame />
 
         <Quote />
 
