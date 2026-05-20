@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Heart } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
+import { scrollToHash } from "@/lib/scroll";
 import Logo from "./Logo";
 
 const Footer = () => {
@@ -9,16 +10,7 @@ const Footer = () => {
 
   const handleNavClick = (e, id) => {
     e.preventDefault();
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-    }
+    scrollToHash(`#${id}`);
   };
 
   return (
@@ -33,7 +25,7 @@ const Footer = () => {
           <div className="footer-brand-col flex flex-col gap-4">
             <button
               type="button"
-              onClick={() => document.querySelector("#hero")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => scrollToHash("#hero")}
               className="logo-chrome-slot relative h-28 w-36 max-w-full overflow-visible border-0 bg-transparent p-0 cursor-pointer sm:h-32 sm:w-40"
               aria-label="Back to top"
             >
@@ -53,15 +45,21 @@ const Footer = () => {
           <div className="flex flex-col gap-4">
             <h3 className="text-white light:text-slate-900! font-space font-bold text-xl mb-2">Navigate</h3>
             <ul className="space-y-3">
-              {['About', 'Skills', 'Projects', 'Contact'].map((item) => (
-                <li key={item}>
-                  <a 
-                    href={`#${item.toLowerCase()}`}
-                    onClick={(e) => handleNavClick(e, item.toLowerCase())}
+              {[
+                { label: "About", id: "about" },
+                { label: "Stats", id: "dev-stats" },
+                { label: "Skills", id: "skills" },
+                { label: "Projects", id: "projects" },
+                { label: "Contact", id: "contact" },
+              ].map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`#${item.id}`}
+                    onClick={(e) => handleNavClick(e, item.id)}
                     className="text-slate-500 hover:text-white light:hover:text-slate-900! transition-colors flex items-center gap-2 group w-fit"
                   >
                     <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-cyan-400" />
-                    <span className="group-hover:text-gradient transition-all">{item}</span>
+                    <span className="group-hover:text-gradient transition-all">{item.label}</span>
                   </a>
                 </li>
               ))}

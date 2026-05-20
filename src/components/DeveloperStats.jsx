@@ -235,7 +235,10 @@ export default function DeveloperStats() {
           transition={{ duration: 0.6 }}
           className="mb-14 text-center md:mb-20"
         >
-          <h2 id="dev-stats-title" className="font-space text-4xl font-bold text-gradient sm:text-5xl md:text-6xl">
+          <h2
+            id="dev-stats-title"
+            className="scroll-mt-24 font-space text-4xl font-bold text-gradient sm:text-5xl md:text-6xl"
+          >
             By The Numbers
           </h2>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 md:text-xl">

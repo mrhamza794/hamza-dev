@@ -1,8 +1,7 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import dynamic from "next/dynamic";
-import { useInView } from "framer-motion";
 
 const Hero3D = dynamic(() => import("@/components/Hero3D"), {
   ssr: false,
@@ -33,12 +32,6 @@ export default function Home() {
     setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   }, []);
 
-  const projectsRef = useRef(null);
-  const contactRef = useRef(null);
-
-  const projectsInView = useInView(projectsRef, { once: true, margin: "400px 0px" });
-  const contactInView = useInView(contactRef, { once: true, margin: "400px 0px" });
-
   return (
     <div className="relative min-h-screen">
       <Navigation />
@@ -58,13 +51,9 @@ export default function Home() {
 
         <Quote />
 
-        <div ref={projectsRef} className="min-h-screen">
-          {projectsInView && <Projects isMobile={isMobile} />}
-        </div>
+        <Projects isMobile={isMobile} />
 
-        <div ref={contactRef} className="min-h-screen">
-          {contactInView && <Contact isMobile={isMobile} />}
-        </div>
+        <Contact isMobile={isMobile} />
       </main>
 
       <Footer />

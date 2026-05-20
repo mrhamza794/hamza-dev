@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { PERSONAL_INFO } from "@/lib/constants";
+import { scrollToHash, onLenisScroll } from "@/lib/scroll";
 import { useTheme } from "next-themes";
 
 const NAV_LINKS = [
-  { name: "About", href: "#about" },
-  { name: "Skills", href: "#skills" },
-  { name: "Projects", href: "#projects" },
-  { name: "Contact", href: "#contact" },
+  { name: "About", href: "#about", sectionId: "about" },
+  { name: "Stats", href: "#dev-stats", sectionId: "dev-stats", scrollTo: "dev-stats-title" },
+  { name: "Skills", href: "#skills", sectionId: "skills" },
+  { name: "Projects", href: "#projects", sectionId: "projects" },
+  { name: "Contact", href: "#contact", sectionId: "contact" },
 ];
 
 const Navigation = () => {
@@ -23,46 +25,45 @@ const Navigation = () => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-      
-      // Update active section based on scroll position
-      const sections = NAV_LINKS.map(link => link.name.toLowerCase());
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= 100 && rect.bottom >= 100) {
-            setActiveSection(section.charAt(0).toUpperCase() + section.slice(1));
-          }
-        }
-      }
-    };
+  const updateActiveSection = useCallback(() => {
+    setIsScrolled(window.scrollY > 50);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    let current = "Hero";
+    for (const link of NAV_LINKS) {
+      const element = document.getElementById(link.sectionId);
+      if (!element) continue;
+
+      const { top } = element.getBoundingClientRect();
+      if (top <= 140) {
+        current = link.name;
+      }
+    }
+    setActiveSection(current);
   }, []);
 
+  useEffect(() => {
+    updateActiveSection();
+
+    const unsubscribeLenis = onLenisScroll(updateActiveSection);
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+
+    return () => {
+      unsubscribeLenis();
+      window.removeEventListener("scroll", updateActiveSection);
+    };
+  }, [updateActiveSection]);
+
   const scrollToHero = () => {
-    document.querySelector("#hero")?.scrollIntoView({ behavior: "smooth" });
+    scrollToHash("#hero");
+    setActiveSection("Hero");
     setIsMobileMenuOpen(false);
   };
 
-  const handleClick = (e, href) => {
+  const handleClick = (e, link) => {
     e.preventDefault();
-    const element = document.querySelector(href);
-    if (element) {
-      const offset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-      setIsMobileMenuOpen(false);
-    }
+    const target = link.scrollTo ? `#${link.scrollTo}` : link.href;
+    scrollToHash(target);
+    setIsMobileMenuOpen(false);
   };
 
   const navHeight = isScrolled ? 56 : 72;
@@ -90,13 +91,12 @@ const Navigation = () => {
           {PERSONAL_INFO.name}
         </button>
 
-        {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-10 ml-auto">
+        <div className="hidden md:flex items-center gap-8 lg:gap-10 ml-auto">
           {NAV_LINKS.map((link) => (
             <div key={link.name} className="relative group">
               <a
                 href={link.href}
-                onClick={(e) => handleClick(e, link.href)}
+                onClick={(e) => handleClick(e, link)}
                 className={`font-space font-medium transition-all duration-300 ${
                   activeSection === link.name
                     ? "text-slate-900 dark:text-white opacity-100 font-semibold"
@@ -113,9 +113,9 @@ const Navigation = () => {
               )}
             </div>
           ))}
-          
-          <div className="h-6 w-px bg-slate-300/70 dark:bg-white/10 mx-2" aria-hidden />
-          
+
+          <div className="h-6 w-px bg-slate-300/70 dark:bg-white/10 mx-1" aria-hidden />
+
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -128,6 +128,7 @@ const Navigation = () => {
             <a
               href={PERSONAL_INFO.linkedin}
               target="_blank"
+              rel="noopener noreferrer"
               className="p-2 rounded-full glass-card hover:rotate-360 hover:scale-110 transition-all duration-500 group"
             >
               <FaLinkedinIn size={16} className="group-hover:text-cyan-accent" />
@@ -135,6 +136,7 @@ const Navigation = () => {
             <a
               href={PERSONAL_INFO.github}
               target="_blank"
+              rel="noopener noreferrer"
               className="p-2 rounded-full glass-card hover:rotate-360 hover:scale-110 transition-all duration-500 group"
             >
               <FaGithub size={16} className="group-hover:text-purple-accent" />
@@ -142,16 +144,16 @@ const Navigation = () => {
           </div>
         </div>
 
-        {/* Mobile Hammer */}
-        <button 
+        <button
+          type="button"
           className="md:hidden p-2 text-slate-900 dark:text-white"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
         >
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
       </motion.div>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -168,7 +170,7 @@ const Navigation = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * i }}
                 href={link.href}
-                onClick={(e) => handleClick(e, link.href)}
+                onClick={(e) => handleClick(e, link)}
                 className={`text-4xl font-space font-bold ${
                   activeSection === link.name
                     ? "text-slate-900 dark:text-white underline decoration-cyan-500 decoration-2 underline-offset-10"
@@ -178,22 +180,22 @@ const Navigation = () => {
                 {link.name}
               </motion.a>
             ))}
-            
+
             <div className="flex gap-8 mt-12">
-               <button
-                 type="button"
-                 aria-label="Toggle theme"
-                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                 className="p-4 glass-card rounded-full"
-               >
-                 {mounted && theme === "light" ? <Moon size={32} /> : <Sun size={32} />}
-               </button>
-               <a href={PERSONAL_INFO.linkedin} target="_blank" className="p-4 glass-card rounded-full">
+              <button
+                type="button"
+                aria-label="Toggle theme"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-4 glass-card rounded-full"
+              >
+                {mounted && theme === "light" ? <Moon size={32} /> : <Sun size={32} />}
+              </button>
+              <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noopener noreferrer" className="p-4 glass-card rounded-full">
                 <FaLinkedinIn size={24} />
-               </a>
-               <a href={PERSONAL_INFO.github} target="_blank" className="p-4 glass-card rounded-full">
+              </a>
+              <a href={PERSONAL_INFO.github} target="_blank" rel="noopener noreferrer" className="p-4 glass-card rounded-full">
                 <FaGithub size={24} />
-               </a>
+              </a>
             </div>
           </motion.div>
         )}

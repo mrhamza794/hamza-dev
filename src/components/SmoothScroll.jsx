@@ -1,19 +1,21 @@
 import { useEffect } from "react";
 import Lenis from "lenis";
+import { registerLenis, scrollToHash } from "@/lib/scroll";
 
 const SmoothScroll = () => {
   useEffect(() => {
     const lenis = new Lenis({
-      /* Explicit root scroll roots — avoids miscalculation when html/body roles differ */
       wrapper: document.documentElement,
       content: document.body,
-      duration: 1.4,
+      duration: 1.2,
       smoothWheel: true,
       smoothTouch: false,
       wheelMultiplier: 0.9,
       touchMultiplier: 1.2,
-      lerp: 0.08,
+      lerp: 0.1,
     });
+
+    registerLenis(lenis);
 
     let rafId;
     const raf = (time) => {
@@ -23,8 +25,16 @@ const SmoothScroll = () => {
 
     rafId = requestAnimationFrame(raf);
 
+    const scrollToInitialHash = () => {
+      const { hash } = window.location;
+      if (hash) scrollToHash(hash);
+    };
+
+    requestAnimationFrame(scrollToInitialHash);
+
     return () => {
       cancelAnimationFrame(rafId);
+      registerLenis(null);
       lenis.destroy();
     };
   }, []);
