@@ -397,7 +397,6 @@ export default function BugGame() {
       id="bug-game"
       className="relative scroll-mt-24 py-24 px-4 sm:px-6 md:py-32"
       aria-labelledby="bug-game-title"
-      data-lenis-prevent
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-pink-500/10 blur-[120px]" />
@@ -423,17 +422,48 @@ export default function BugGame() {
 
         <div className="mx-auto max-w-4xl">
           <div
-            className="glass-card relative overflow-hidden rounded-3xl border border-purple-500/20 p-4 sm:p-6 md:p-8 dark:border-cyan-500/15"
+            className="glass-card pointer-events-auto relative z-10 overflow-hidden rounded-3xl border border-purple-500/20 p-4 sm:p-6 md:p-8 dark:border-cyan-500/15"
             style={{
               boxShadow:
                 "0 0 0 1px rgba(139,92,246,0.15), 0 20px 60px rgba(15,23,42,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
           >
+            {gameState === "start" && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative z-20 mb-6 text-center"
+              >
+                <div className="mb-4 text-6xl sm:text-7xl" aria-hidden>
+                  🐛
+                </div>
+                <h3 className="font-space text-2xl font-bold text-gradient sm:text-3xl">Ready to Debug?</h3>
+                <p className="mx-auto mt-3 max-w-md text-sm text-slate-600 dark:text-slate-400 sm:text-base">
+                  Tap or click the bugs as fast as you can. You have 30 seconds — build combos for bonus points!
+                </p>
+                {highScore > 0 && (
+                  <p className="mt-3 text-sm text-slate-500">
+                    Your best:{" "}
+                    <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span> bugs
+                  </p>
+                )}
+                <button
+                  id="bug-game-start"
+                  type="button"
+                  onClick={startGame}
+                  className="bug-game-start contact-form-submit relative z-50 mt-6 w-full max-w-xs cursor-pointer rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-10 py-4 font-space text-lg font-bold text-white shadow-lg shadow-purple-500/30 transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 sm:w-auto"
+                >
+                  Start Game 🚀
+                </button>
+                <p className="mt-4 text-xs text-slate-500">Spacebar squashes nearest bug while playing</p>
+              </motion.div>
+            )}
+
             <div
               ref={gameAreaRef}
-              className={`bug-game-area relative mx-auto h-[450px] w-full overflow-hidden rounded-2xl bg-linear-to-br from-purple-900/10 via-slate-900/5 to-cyan-900/10 md:h-[500px] lg:h-[600px] light:from-purple-100/40 light:to-cyan-50/30 ${
-                gameState === "playing" ? "cursor-crosshair" : ""
-              }`}
+              className={`bug-game-area relative mx-auto w-full overflow-hidden rounded-2xl bg-linear-to-br from-purple-900/10 via-slate-900/5 to-cyan-900/10 light:from-purple-100/40 light:to-cyan-50/30 ${
+                gameState === "start" ? "h-[200px] sm:h-[240px]" : "h-[450px] md:h-[500px] lg:h-[600px]"
+              } ${gameState === "playing" ? "cursor-crosshair" : ""}`}
               role={gameState === "playing" ? "application" : undefined}
               aria-label="Bug catching game area"
             >
@@ -442,44 +472,13 @@ export default function BugGame() {
                 aria-hidden
               />
 
-              <AnimatePresence mode="wait">
-                {gameState === "start" && (
-                  <motion.div
-                    key="start"
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6"
-                  >
-                    <div className="mb-6 text-7xl sm:text-8xl" aria-hidden>
-                      🐛
-                    </div>
-                    <h3 className="font-space text-2xl font-bold text-gradient sm:text-3xl">Ready to Debug?</h3>
-                    <p className="mt-3 max-w-md text-center text-sm text-slate-600 dark:text-slate-400 sm:text-base">
-                      Tap or click the bugs as fast as you can. You have 30 seconds — build combos for bonus points!
-                    </p>
-                    {highScore > 0 && (
-                      <p className="mt-4 text-sm text-slate-500">
-                        Your best:{" "}
-                        <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span> bugs
-                      </p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        startGame();
-                      }}
-                      data-lenis-prevent
-                      className="relative z-40 mt-8 cursor-pointer rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-10 py-3.5 font-space text-lg font-bold text-white shadow-lg shadow-purple-500/30 transition-transform hover:scale-105 hover:shadow-purple-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-                    >
-                      Start Game 🚀
-                    </button>
-                    <p className="mt-6 text-xs text-slate-500">Spacebar squashes nearest bug while playing</p>
-                  </motion.div>
-                )}
+              {gameState === "start" && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-40" aria-hidden>
+                  <span className="text-5xl">🎯</span>
+                </div>
+              )}
 
+              <AnimatePresence>
                 {gameState === "playing" && (
                   <motion.div key="playing" className="absolute inset-0 z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <div className="absolute top-0 right-0 left-0 z-10 h-1 bg-slate-800/40 dark:bg-slate-900/50">
@@ -607,58 +606,54 @@ export default function BugGame() {
                   </motion.div>
                 )}
 
-                {gameState === "gameover" && (
-                  <motion.div
-                    key="over"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 z-30 flex flex-col items-center justify-center px-6"
-                  >
-                    <div className="mb-4 text-6xl" aria-hidden>
-                      🎉
-                    </div>
-                    <h3 className="font-space text-3xl font-bold text-gradient sm:text-4xl">Game Over!</h3>
-                    <p className="mt-6 font-space text-6xl font-bold tabular-nums text-gradient sm:text-7xl">{score}</p>
-                    <p className="mt-1 text-slate-500">Bugs Squashed</p>
-                    <p className="mt-4 text-center text-lg text-cyan-600 dark:text-cyan-400">{getScoreMessage(score)}</p>
-
-                    {newRecord && (
-                      <p className="mt-3 animate-pulse text-sm font-semibold text-amber-500">🏆 New High Score! 🏆</p>
-                    )}
-
-                    {highScore > 0 && !isNewHighScore && (
-                      <p className="mt-4 text-sm text-slate-500">
-                        Your best: <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span>
-                      </p>
-                    )}
-
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          startGame();
-                        }}
-                        data-lenis-prevent
-                        className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-8 py-3 font-space font-semibold text-white transition-transform hover:scale-105"
-                      >
-                        <RotateCcw className="h-4 w-4" aria-hidden />
-                        Play Again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={shareScore}
-                        className="inline-flex items-center gap-2 rounded-xl border-2 border-white/20 bg-white/5 px-8 py-3 font-space font-semibold text-slate-800 transition-colors hover:border-purple-500/40 hover:bg-white/10 dark:text-white"
-                      >
-                        <Share2 className="h-4 w-4" aria-hidden />
-                        {shareCopied ? "Copied!" : "Share Score"}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
               </AnimatePresence>
+
+              {gameState === "gameover" && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/30 light:bg-white/40" aria-hidden />
+              )}
             </div>
+
+            {gameState === "gameover" && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 text-center"
+              >
+                <h3 className="font-space text-2xl font-bold text-gradient sm:text-3xl">Game Over!</h3>
+                <p className="mt-4 font-space text-5xl font-bold tabular-nums text-gradient sm:text-6xl">{score}</p>
+                <p className="mt-1 text-slate-500">Bugs Squashed</p>
+                <p className="mt-3 text-lg text-cyan-600 dark:text-cyan-400">{getScoreMessage(score)}</p>
+
+                {newRecord && (
+                  <p className="mt-2 animate-pulse text-sm font-semibold text-amber-500">🏆 New High Score! 🏆</p>
+                )}
+
+                {highScore > 0 && !newRecord && (
+                  <p className="mt-3 text-sm text-slate-500">
+                    Your best: <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span>
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={startGame}
+                    className="contact-form-submit relative z-50 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-8 py-3 font-space font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                  >
+                    <RotateCcw className="h-4 w-4" aria-hidden />
+                    Play Again
+                  </button>
+                  <button
+                    type="button"
+                    onClick={shareScore}
+                    className="relative z-50 inline-flex cursor-pointer items-center gap-2 rounded-xl border-2 border-white/20 bg-white/5 px-8 py-3 font-space font-semibold text-slate-800 transition-colors hover:border-purple-500/40 hover:bg-white/10 dark:text-white"
+                  >
+                    <Share2 className="h-4 w-4" aria-hidden />
+                    {shareCopied ? "Copied!" : "Share Score"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
             <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
               <Crosshair className="mr-1 inline h-4 w-4 align-text-bottom text-purple-500" aria-hidden />

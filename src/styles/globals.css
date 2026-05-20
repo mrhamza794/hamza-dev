@@ -105,6 +105,22 @@ body {
   body {
     cursor: none; /* Custom cursor only on pointer-precise devices */
   }
+
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  summary,
+  label[for],
+  [role="button"],
+  [role="tab"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  .cursor-pointer {
+    cursor: pointer !important;
+  }
 }
 
 /* Custom Scrollbar */

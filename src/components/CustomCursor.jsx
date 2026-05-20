@@ -3,6 +3,9 @@ import { useRouter } from "next/router";
 
 const TRAIL_DOTS = 5;
 
+const CLICKABLE_SELECTOR =
+  'a, button, input, textarea, select, label, summary, [role="button"], [role="tab"], [type="button"], [type="submit"]';
+
 const CustomCursor = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isPointer, setIsPointer] = useState(false);
@@ -22,39 +25,17 @@ const CustomCursor = () => {
       const nextPosition = { x: e.clientX, y: e.clientY };
       positionRef.current = nextPosition;
       setPosition(nextPosition);
-    };
 
-    const handlePointerEntry = () => setIsPointer(true);
-    const handlePointerLeave = () => setIsPointer(false);
+      const target = e.target;
+      if (target instanceof Element) {
+        setIsPointer(!!target.closest(CLICKABLE_SELECTOR));
+      }
+    };
 
     window.addEventListener("mousemove", moveCursor, { passive: true });
 
-    const attachListeners = () => {
-      const clickables = document.querySelectorAll('a, button, input, textarea, [role="button"], [role="tab"]');
-      clickables.forEach((el) => {
-        el.addEventListener("mouseenter", handlePointerEntry);
-        el.addEventListener("mouseleave", handlePointerLeave);
-      });
-      return clickables;
-    };
-
-    let clickables = attachListeners();
-
-    const timeout = setTimeout(() => {
-      clickables.forEach((el) => {
-        el.removeEventListener("mouseenter", handlePointerEntry);
-        el.removeEventListener("mouseleave", handlePointerLeave);
-      });
-      clickables = attachListeners();
-    }, 1000);
-
     return () => {
       window.removeEventListener("mousemove", moveCursor);
-      clickables.forEach((el) => {
-        el.removeEventListener("mouseenter", handlePointerEntry);
-        el.removeEventListener("mouseleave", handlePointerLeave);
-      });
-      clearTimeout(timeout);
     };
   }, [pathname]);
 
@@ -88,35 +69,34 @@ const CustomCursor = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  if (!isVisible || isPointer) return null;
 
   return (
     <>
       <div
-        className="fixed pointer-events-none z-9999 rounded-full transition-transform duration-150 will-change-transform"
+        className="fixed pointer-events-none z-100 rounded-full transition-transform duration-150 will-change-transform"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
           width: "10px",
           height: "10px",
           backgroundImage: "linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%)",
-          transform: `translate(-50%, -50%) scale(${isPointer ? 3 : 1})`,
+          transform: `translate(-50%, -50%) scale(${isPointer ? 1.5 : 1})`,
           boxShadow: "0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(6, 182, 212, 0.3)",
-          filter: isPointer ? "blur(1px)" : "blur(0px)",
         }}
       />
 
       {trail.map((pos, index) => (
         <div
           key={index}
-          className="fixed pointer-events-none z-9998 rounded-full mix-blend-screen will-change-transform"
+          className="fixed pointer-events-none z-99 rounded-full will-change-transform"
           style={{
             left: `${pos.x}px`,
             top: `${pos.y}px`,
             width: `${8 - index}px`,
             height: `${8 - index}px`,
             backgroundColor: index % 2 === 0 ? "#8B5CF6" : "#06B6D4",
-            opacity: isPointer ? 0 : 0.8 - index * 0.15,
+            opacity: isPointer ? 0.35 : 0.8 - index * 0.15,
             transform: "translate(-50%, -50%)",
             boxShadow: `0 0 ${10 - index}px currentColor`,
           }}
