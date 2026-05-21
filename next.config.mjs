@@ -12,6 +12,7 @@ const nextConfig = {
     GMAIL_USER: process.env.GMAIL_USER,
     GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
+    MONGO_URI: process.env.MONGO_URI,
   },
 }
 
