@@ -72,35 +72,13 @@ function buildContactEmailHtml({ name, email, message }) {
 </html>`;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const { name, email, message } = req.body ?? {};
-
-  if (
-    typeof name !== "string" ||
-    typeof email !== "string" ||
-    typeof message !== "string" ||
-    !name.trim() ||
-    !email.trim() ||
-    !message.trim()
-  ) {
-    return res.status(400).json({ error: "Missing required fields." });
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-    return res.status(400).json({ error: "Invalid email address." });
-  }
-
+export async function sendContactEmail({ name, email, message }) {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   const to = process.env.CONTACT_TO_EMAIL?.trim() || user;
 
   if (!user || !pass || !to) {
-    return res.status(500).json({ error: "Email is not configured on the server." });
+    return { ok: false, error: "Email is not configured on the server." };
   }
 
   const transporter = nodemailer.createTransport({
@@ -128,10 +106,9 @@ export default async function handler(req, res) {
       text: `From: ${safeName} <${safeEmail}>\n\n${safeMessage}`,
       html: emailHtml,
     });
+    return { ok: true };
   } catch (err) {
-    console.error("[contact]", err);
-    return res.status(502).json({ error: "Could not send email. Try again later." });
+    console.error("[contact email]", err);
+    return { ok: false, error: "Could not send email. Try again later." };
   }
-
-  return res.status(200).json({ ok: true });
 }
