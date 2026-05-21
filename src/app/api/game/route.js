@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import GameScore from "@/lib/models/GameScore";
 import { parseUserAgent, getRankFromScore } from "@/lib/getDeviceInfo";
 import { getClientIp, getUserAgent, lookupIpLocation } from "@/lib/requestMeta";
+import { getPersonalBest } from "@/lib/gameScores";
 
 export async function POST(request) {
   try {
@@ -52,6 +53,7 @@ export async function POST(request) {
     });
 
     const rankPosition = (await GameScore.countDocuments({ score: { $gt: score } })) + 1;
+    const personalBest = await getPersonalBest(gameScore.playerName);
 
     return NextResponse.json(
       {
@@ -63,6 +65,7 @@ export async function POST(request) {
           rank: gameScore.rank,
           rankPosition,
           location: gameScore.location,
+          personalBest,
         },
       },
       { status: 201 }
@@ -82,6 +85,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") ?? "10", 10);
+    const playerName = searchParams.get("playerName");
 
     const leaderboard = await GameScore.find({})
       .sort({ score: -1, playedAt: 1 })
@@ -94,6 +98,8 @@ export async function GET(request) {
     const averageScore = await GameScore.aggregate([
       { $group: { _id: null, avg: { $avg: "$score" } } },
     ]);
+
+    const personalBest = playerName ? await getPersonalBest(playerName) : null;
 
     return NextResponse.json({
       success: true,
@@ -111,6 +117,7 @@ export async function GET(request) {
           totalPlayers,
           highestScore,
           averageScore: Math.round(averageScore[0]?.avg ?? 0),
+          ...(personalBest !== null && { personalBest }),
         },
       },
     });

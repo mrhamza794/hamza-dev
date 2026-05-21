@@ -10,7 +10,7 @@ import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 const GAME_DURATION = 30;
 
-const HIGH_SCORE_KEY = "bugGameHighScore";
+const PLAYER_NAME_SESSION_KEY = "bugGamePlayerName";
 
 const COMBO_WINDOW_MS = 1500;
 
@@ -166,7 +166,7 @@ export default function BugGame() {
 
   const [scorePopups, setScorePopups] = useState([]);
 
-  const [highScore, setHighScore] = useState(0);
+  const [personalBest, setPersonalBest] = useState(null);
 
   const [newRecord, setNewRecord] = useState(false);
 
@@ -210,7 +210,7 @@ export default function BugGame() {
 
   const bugConfigRef = useRef(bugConfig);
 
-  const highScoreRef = useRef(0);
+  const personalBestRef = useRef(null);
 
 
 
@@ -249,59 +249,40 @@ export default function BugGame() {
 
 
   useEffect(() => {
+    personalBestRef.current = personalBest;
+  }, [personalBest]);
 
-    highScoreRef.current = highScore;
-
-  }, [highScore]);
-
-
-
-  useEffect(() => {
-
-    const saved = localStorage.getItem(HIGH_SCORE_KEY);
-
-    if (saved) setHighScore(parseInt(saved, 10) || 0);
-
-  }, []);
-
-
-
-  const fetchLeaderboard = useCallback(async () => {
-
+  const fetchLeaderboard = useCallback(async (name) => {
     setIsLoadingLeaderboard(true);
-
     try {
+      const params = new URLSearchParams({ limit: "10" });
+      if (name?.trim()) params.set("playerName", name.trim());
 
-      const response = await fetch("/api/game?limit=10");
-
+      const response = await fetch(`/api/game?${params}`);
       const data = await response.json();
 
       if (data.success) {
-
         setLeaderboardData(data.data.leaderboard);
-
         setLeaderboardStats(data.data.stats);
-
+        if (data.data.stats.personalBest != null) {
+          setPersonalBest(data.data.stats.personalBest);
+        }
       }
-
     } catch (error) {
-
       console.error("Failed to fetch leaderboard:", error);
-
     } finally {
-
       setIsLoadingLeaderboard(false);
-
     }
-
   }, []);
 
-
-
   useEffect(() => {
-
-    fetchLeaderboard();
-
+    const savedName = sessionStorage.getItem(PLAYER_NAME_SESSION_KEY);
+    if (savedName) {
+      setPlayerName(savedName);
+      fetchLeaderboard(savedName);
+    } else {
+      fetchLeaderboard();
+    }
   }, [fetchLeaderboard]);
 
 
@@ -455,22 +436,11 @@ export default function BugGame() {
 
 
     const final = scoreRef.current;
+    const previousBest = personalBestRef.current;
 
-    if (final > highScoreRef.current) {
-
-      setHighScore(final);
-
-      highScoreRef.current = final;
-
-      localStorage.setItem(HIGH_SCORE_KEY, String(final));
-
-      setNewRecord(true);
-
-    } else {
-
-      setNewRecord(false);
-
-    }
+    setNewRecord(
+      previousBest !== null && final > previousBest
+    );
 
 
 
@@ -553,11 +523,13 @@ export default function BugGame() {
 
 
       if (data.success) {
-
+        const name = playerName.trim();
+        sessionStorage.setItem(PLAYER_NAME_SESSION_KEY, name);
         setPlayerRankPosition(data.data.rankPosition);
-
-        await fetchLeaderboard();
-
+        if (data.data.personalBest != null) {
+          setPersonalBest(data.data.personalBest);
+        }
+        await fetchLeaderboard(name);
         setGameState("leaderboard");
 
         gameStateRef.current = "leaderboard";
@@ -583,9 +555,8 @@ export default function BugGame() {
 
 
   const skipAndShowLeaderboard = async () => {
-
-    await fetchLeaderboard();
-
+    const name = playerName.trim() || sessionStorage.getItem(PLAYER_NAME_SESSION_KEY);
+    await fetchLeaderboard(name || undefined);
     setGameState("leaderboard");
 
     gameStateRef.current = "leaderboard";
@@ -595,9 +566,8 @@ export default function BugGame() {
 
 
   const openLeaderboard = async () => {
-
-    await fetchLeaderboard();
-
+    const name = playerName.trim() || sessionStorage.getItem(PLAYER_NAME_SESSION_KEY);
+    await fetchLeaderboard(name || undefined);
     setGameState("leaderboard");
 
     gameStateRef.current = "leaderboard";
@@ -1158,16 +1128,11 @@ export default function BugGame() {
 
 
 
-                  {highScore > 0 && (
-
+                  {personalBest != null && personalBest > 0 && (
                     <p className="mt-4 text-sm text-slate-500">
-
                       Your best:{" "}
-
-                      <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span> bugs
-
+                      <span className="font-bold text-purple-500 dark:text-purple-400">{personalBest}</span> bugs
                     </p>
-
                   )}
 
 
@@ -1506,28 +1471,17 @@ export default function BugGame() {
 
 
 
-                  {(newRecord || (score === highScore && score > 0)) && (
-
+                  {newRecord && (
                     <p className="mt-3 animate-pulse text-sm font-semibold text-amber-500">
-
                       🏆 New Personal Best!
-
                     </p>
-
                   )}
 
-
-
-                  {highScore > 0 && !newRecord && score !== highScore && (
-
+                  {personalBest != null && !newRecord && score <= personalBest && (
                     <p className="mt-3 text-sm text-slate-500">
-
                       Your best:{" "}
-
-                      <span className="font-bold text-purple-500 dark:text-purple-400">{highScore}</span>
-
+                      <span className="font-bold text-purple-500 dark:text-purple-400">{personalBest}</span>
                     </p>
-
                   )}
 
 
@@ -1868,32 +1822,13 @@ export default function BugGame() {
 
 
 
-                  <div className="flex shrink-0 gap-3">
-
+                  <div className="shrink-0">
                     <GameButton
-
-                      onClick={startGame}
-
-                      className="flex-1 rounded-xl bg-linear-to-r from-purple-600 to-blue-600 py-3 text-sm text-white"
-
-                    >
-
-                      🔄 Play Again
-
-                    </GameButton>
-
-                    <GameButton
-
                       onClick={goHome}
-
-                      className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm light:border-slate-300/60"
-
+                      className="w-full rounded-xl border border-white/20 bg-white/5 py-3 text-sm light:border-slate-300/60"
                     >
-
                       🏠 Home
-
                     </GameButton>
-
                   </div>
 
                 </motion.div>
