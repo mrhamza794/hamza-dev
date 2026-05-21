@@ -4,6 +4,7 @@ import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
 import SmoothScroll from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/theme-provider";
+import { VisitorTrackingProvider } from "@/hooks/useVisitorTracking";
 import {
   SEO,
   THEME_COLOR,
@@ -83,12 +84,14 @@ export default function App({ Component, pageProps }) {
         className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <SmoothScroll />
-          <ScrollProgress />
-          <CustomCursor />
-          <div className="relative z-10">
-            <Component {...pageProps} />
-          </div>
+          <VisitorTrackingProvider>
+            <SmoothScroll />
+            <ScrollProgress />
+            <CustomCursor />
+            <div className="relative z-10">
+              <Component {...pageProps} />
+            </div>
+          </VisitorTrackingProvider>
         </ThemeProvider>
       </div>
     </>

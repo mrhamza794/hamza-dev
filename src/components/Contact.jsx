@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motio
 import { Send, Mail, User, MessageSquare, MapPin, Phone, AlertCircle } from "lucide-react";
 import { PERSONAL_INFO } from "@/lib/constants";
 import { useTheme } from "next-themes";
+import { useVisitorTracking } from "@/hooks/useVisitorTracking";
 
 const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
   <motion.div 
@@ -24,6 +25,7 @@ const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
 
 const Contact = () => {
   const { theme } = useTheme();
+  const { trackContactClick } = useVisitorTracking();
   const [formState, setFormState] = useState("idle"); // idle | typing | submitting | success | error
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [errorMsg, setErrorMsg] = useState("");
@@ -93,11 +95,12 @@ const Contact = () => {
         body: JSON.stringify({ name, email, message }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         throw new Error(data.error || "Something went wrong.");
       }
       setFormData({ name: "", email: "", message: "" });
       setFormState("success");
+      trackContactClick();
     } catch (err) {
       setFormState("error");
       setErrorMsg(err instanceof Error ? err.message : "Failed to send. Try again later.");
