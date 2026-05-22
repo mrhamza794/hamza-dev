@@ -22,7 +22,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { useAdminChartTheme } from "@/components/admin/useAdminChartTheme";
 
@@ -89,10 +88,14 @@ export default function Dashboard() {
 
   const { stats, recentContacts, charts } = data;
 
-  const deviceData = charts.deviceBreakdown.map((d) => ({
-    name: d._id || "unknown",
-    value: d.count,
-  }));
+  const deviceData = charts.deviceBreakdown
+    .map((d) => ({
+      name: (d._id || "unknown").replace(/^\w/, (c) => c.toUpperCase()),
+      value: d.count,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const deviceTotal = deviceData.reduce((sum, d) => sum + d.value, 0);
 
   return (
     <div className="space-y-6">
@@ -181,24 +184,55 @@ export default function Dashboard() {
         <div className="admin-card p-6">
           <h3 className="admin-heading">Device Types</h3>
           {deviceData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={deviceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  dataKey="value"
-                >
-                  {deviceData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={chart.tooltipContent} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div className="relative mx-auto h-[180px] w-full max-w-[180px] shrink-0 sm:mx-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={deviceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={78}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {deviceData.map((entry, i) => (
+                        <Cell key={entry.name} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={chart.tooltipContent}
+                      formatter={(value, name) => [`${value} visitors`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xs admin-text-muted">Total</span>
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{deviceTotal}</span>
+                </div>
+              </div>
+
+              <ul className="flex w-full flex-1 flex-col justify-center gap-3">
+                {deviceData.map((d, i) => {
+                  const pct = deviceTotal ? Math.round((d.value / deviceTotal) * 100) : 0;
+                  return (
+                    <li key={d.name} className="flex items-center gap-3">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                      />
+                      <span className="min-w-0 flex-1 capitalize admin-text-body">{d.name}</span>
+                      <span className="shrink-0 tabular-nums admin-text-muted">{d.value}</span>
+                      <span className="w-11 shrink-0 text-right text-sm font-semibold text-purple-600 dark:text-purple-400">
+                        {pct}%
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : (
             <p className="py-12 text-center admin-text-muted">No device data yet</p>
           )}
