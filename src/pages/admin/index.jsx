@@ -64,7 +64,17 @@ export default function AdminLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setError(
+          res.ok
+            ? "Invalid server response."
+            : "Server error. Stop the dev server, delete the .next folder, and run npm run dev again."
+        );
+        return;
+      }
 
       if (!data.success) {
         setError(data.error || "Invalid email or password");

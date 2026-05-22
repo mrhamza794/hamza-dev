@@ -30,7 +30,19 @@ export function getCookie(req, name) {
   return parse(raw)[name];
 }
 
+/** Next.js Pages API parses JSON bodies by default — use req.body when present. */
 export function readJsonBody(req) {
+  if (req.body !== undefined && req.body !== null && req.body !== "") {
+    if (typeof req.body === "string") {
+      try {
+        return Promise.resolve(req.body ? JSON.parse(req.body) : {});
+      } catch {
+        return Promise.reject(new Error("Invalid JSON body"));
+      }
+    }
+    return Promise.resolve(req.body);
+  }
+
   return new Promise((resolve, reject) => {
     let data = "";
     req.on("data", (chunk) => {

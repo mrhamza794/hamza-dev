@@ -1,5 +1,6 @@
 import { verifyAdminPassword } from "@/lib/adminCredentials";
 import { generateCredToken, buildCredCookie } from "@/lib/adminAuth";
+import { handleApiError } from "@/lib/apiErrors";
 import { readJsonBody, sendJson, methodNotAllowed, setResponseCookies } from "@/lib/pagesApi";
 
 export default async function handler(req, res) {
@@ -28,7 +29,6 @@ export default async function handler(req, res) {
       email: result.email,
     });
   } catch (error) {
-    console.error("Verify credentials error:", error);
-    return sendJson(res, 500, { success: false, error: "Internal server error" });
+    return handleApiError(res, error, "Verify credentials");
   }
 }
