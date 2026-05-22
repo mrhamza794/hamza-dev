@@ -26,6 +26,7 @@ export default function GameScoreEditModal({ score, onClose, onSaved }) {
     try {
       const res = await fetch(`/api/admin/game/${score._id}`, {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           playerName,

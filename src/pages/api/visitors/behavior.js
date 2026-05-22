@@ -1,19 +1,18 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
+import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function PATCH(request) {
+export default async function handler(req, res) {
+  if (req.method !== "PATCH") return methodNotAllowed(res, ["PATCH"]);
+
   try {
     await connectDB();
 
-    const body = await request.json();
+    const body = await readJsonBody(req);
     const { sessionId, behavior } = body;
 
     if (!sessionId) {
-      return NextResponse.json(
-        { success: false, error: "Session ID required" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, { success: false, error: "Session ID required" });
     }
 
     const updateQuery = { $set: { lastActive: new Date() } };
@@ -43,12 +42,9 @@ export async function PATCH(request) {
 
     await Visitor.findOneAndUpdate({ sessionId }, updateQuery);
 
-    return NextResponse.json({ success: true });
+    return sendJson(res, 200, { success: true });
   } catch (error) {
     console.error("Visitor behavior PATCH Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }

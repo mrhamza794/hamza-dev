@@ -1,11 +1,9 @@
 import { parseUserAgent as parseUA } from "@/lib/getDeviceInfo";
 
+import { getClientIp } from "@/lib/requestMeta";
+
 export function getIpFromRequest(request) {
-  const ip =
-    request.headers.get("x-forwarded-for") ||
-    request.headers.get("x-real-ip") ||
-    "0.0.0.0";
-  return ip.split(",")[0].trim();
+  return getClientIp(request);
 }
 
 export function parseUserAgent(userAgentString) {

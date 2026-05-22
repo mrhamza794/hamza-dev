@@ -1,25 +1,22 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
-import { verifyToken, COOKIE_NAME } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function GET(request) {
-  const token = request.cookies.get(COOKIE_NAME)?.value;
-  if (!token || !verifyToken(token)) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-  }
+export default async function handler(req, res) {
+  if (req.method !== "GET") return methodNotAllowed(res, ["GET"]);
+  if (!requireAdmin(req, res)) return;
 
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(50, parseInt(searchParams.get("limit") || "20"));
+    const page = Math.max(1, parseInt(req.query.page || "1", 10));
+    const limit = Math.min(50, parseInt(req.query.limit || "20", 10));
     const skip = (page - 1) * limit;
-    const device = searchParams.get("device") || "";
-    const country = searchParams.get("country") || "";
-    const dateFrom = searchParams.get("dateFrom");
-    const dateTo = searchParams.get("dateTo");
+    const device = req.query.device || "";
+    const country = req.query.country || "";
+    const dateFrom = req.query.dateFrom;
+    const dateTo = req.query.dateTo;
 
     const filter = { isBot: false };
     if (device) filter["device.type"] = device;
@@ -32,9 +29,7 @@ export async function GET(request) {
 
     const [visitors, total, analytics] = await Promise.all([
       Visitor.find(filter).sort({ visitedAt: -1 }).skip(skip).limit(limit).lean(),
-
       Visitor.countDocuments(filter),
-
       Promise.all([
         Visitor.aggregate([
           { $match: { isBot: false } },
@@ -99,7 +94,7 @@ export async function GET(request) {
 
     const [devices, countries, browsers, operatingSystems, daily, behavior, referrers] = analytics;
 
-    return NextResponse.json({
+    return sendJson(res, 200, {
       success: true,
       data: {
         visitors,
@@ -122,6 +117,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Visitors admin error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { serialize } from "cookie";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const COOKIE_NAME = "hc_admin_token";
@@ -20,10 +21,12 @@ export function verifyOTP(otp, hash) {
 }
 
 export function generateToken(payload) {
+  if (!JWT_SECRET) throw new Error("JWT_SECRET is not configured");
   return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 }
 
 export function verifyToken(token) {
+  if (!JWT_SECRET || !token) return null;
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch {
@@ -32,12 +35,14 @@ export function verifyToken(token) {
 }
 
 export function generateCredToken(email) {
+  if (!JWT_SECRET) throw new Error("JWT_SECRET is not configured");
   return jwt.sign({ email: email.toLowerCase(), step: "credentials" }, JWT_SECRET, {
     expiresIn: CRED_TOKEN_EXPIRY,
   });
 }
 
 export function verifyCredToken(token) {
+  if (!token) return null;
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded?.step !== "credentials" || !decoded?.email) return null;
@@ -48,13 +53,30 @@ export function verifyCredToken(token) {
 }
 
 export function cookieOptions(maxAgeSeconds) {
+  const isProd = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProd,
+    sameSite: "lax",
     path: "/",
     maxAge: maxAgeSeconds,
   };
+}
+
+export function buildAuthCookie(token) {
+  return serialize(COOKIE_NAME, token, cookieOptions(60 * 60 * 24));
+}
+
+export function buildCredCookie(token) {
+  return serialize(CRED_COOKIE_NAME, token, cookieOptions(60 * 15));
+}
+
+export function buildClearCookie(name) {
+  return serialize(name, "", {
+    ...cookieOptions(0),
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
 
 export { COOKIE_NAME, CRED_COOKIE_NAME };

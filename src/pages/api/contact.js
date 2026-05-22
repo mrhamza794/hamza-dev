@@ -1,34 +1,28 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Contact from "@/lib/models/Contact";
 import { parseUserAgent } from "@/lib/getDeviceInfo";
 import { sendContactEmail } from "@/lib/contactEmail";
 import { getClientIp, getUserAgent } from "@/lib/requestMeta";
+import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function POST(request) {
+async function handlePost(req, res) {
   try {
     await connectDB();
 
-    const body = await request.json();
+    const body = await readJsonBody(req);
     const { name, email, message } = body;
 
     if (!name || !email || !message) {
-      return NextResponse.json(
-        { success: false, error: "All fields are required" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, { success: false, error: "All fields are required" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email address" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, { success: false, error: "Invalid email address" });
     }
 
-    const userAgent = getUserAgent(request);
-    const cleanIp = getClientIp(request);
+    const userAgent = getUserAgent(req);
+    const cleanIp = getClientIp(req);
     const deviceInfo = parseUserAgent(userAgent);
 
     const trimmedName = name.trim();
@@ -53,41 +47,35 @@ export async function POST(request) {
     });
 
     if (!emailResult.ok) {
-      return NextResponse.json(
-        { success: false, error: emailResult.error },
-        { status: 502 }
-      );
+      return sendJson(res, 502, { success: false, error: emailResult.error });
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Message received! I will get back to you soon.",
-        id: contact._id,
-      },
-      { status: 201 }
-    );
+    return sendJson(res, 201, {
+      success: true,
+      message: "Message received! I will get back to you soon.",
+      id: contact._id,
+    });
   } catch (error) {
     console.error("Contact API Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }
 
-export async function GET() {
+async function handleGet(req, res) {
   try {
     await connectDB();
 
     const contacts = await Contact.find({}).sort({ createdAt: -1 }).lean();
 
-    return NextResponse.json({ success: true, data: contacts });
+    return sendJson(res, 200, { success: true, data: contacts });
   } catch (error) {
     console.error("Contact GET Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
+}
+
+export default async function handler(req, res) {
+  if (req.method === "POST") return handlePost(req, res);
+  if (req.method === "GET") return handleGet(req, res);
+  return methodNotAllowed(res, ["POST", "GET"]);
 }

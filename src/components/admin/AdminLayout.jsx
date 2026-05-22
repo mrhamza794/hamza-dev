@@ -34,7 +34,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     if (isLoginPage) return;
 
-    fetch("/api/admin/verify-session")
+    fetch("/api/admin/verify-session", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (!data.authenticated) router.replace("/admin");
@@ -45,7 +45,7 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    await fetch("/api/admin/logout", { method: "POST" });
+    await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
     router.replace("/admin");
   };
 

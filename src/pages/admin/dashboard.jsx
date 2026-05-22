@@ -65,7 +65,7 @@ export default function Dashboard() {
   const chart = useAdminChartTheme();
 
   useEffect(() => {
-    fetch("/api/admin/dashboard")
+    fetch("/api/admin/dashboard", { credentials: "include" })
       .then((res) => res.json())
       .then((d) => {
         if (d.success) setData(d.data);

@@ -1,13 +1,25 @@
+function getHeader(req, name) {
+  if (!req?.headers) return "";
+  if (typeof req.headers.get === "function") {
+    return req.headers.get(name) || "";
+  }
+  const key = name.toLowerCase();
+  const value = req.headers[key] ?? req.headers[name];
+  if (Array.isArray(value)) return value[0] || "";
+  return value || "";
+}
+
 export function getClientIp(request) {
   const ip =
-    request.headers.get("x-forwarded-for") ||
-    request.headers.get("x-real-ip") ||
+    getHeader(request, "x-forwarded-for") ||
+    getHeader(request, "x-real-ip") ||
+    request.socket?.remoteAddress ||
     "0.0.0.0";
-  return ip.split(",")[0].trim();
+  return String(ip).split(",")[0].trim();
 }
 
 export function getUserAgent(request) {
-  return request.headers.get("user-agent") || "";
+  return getHeader(request, "user-agent");
 }
 
 export async function lookupIpLocation(ip) {

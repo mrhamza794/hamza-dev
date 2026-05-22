@@ -1,15 +1,13 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
 import Contact from "@/lib/models/Contact";
 import GameScore from "@/lib/models/GameScore";
-import { verifyToken, COOKIE_NAME } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function GET(request) {
-  const token = request.cookies.get(COOKIE_NAME)?.value;
-  if (!token || !verifyToken(token)) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-  }
+export default async function handler(req, res) {
+  if (req.method !== "GET") return methodNotAllowed(res, ["GET"]);
+  if (!requireAdmin(req, res)) return;
 
   try {
     await connectDB();
@@ -82,7 +80,7 @@ export async function GET(request) {
         ? Math.round(((monthVisitors - lastMonthVisitors) / lastMonthVisitors) * 100)
         : 100;
 
-    return NextResponse.json({
+    return sendJson(res, 200, {
       success: true,
       data: {
         stats: {
@@ -109,6 +107,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Dashboard error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }

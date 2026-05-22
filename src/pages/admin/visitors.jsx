@@ -43,7 +43,7 @@ export default function VisitorsPage() {
         limit: "20",
         ...(deviceFilter && { device: deviceFilter }),
       });
-      const res = await fetch(`/api/admin/visitors?${params}`);
+      const res = await fetch(`/api/admin/visitors?${params}`, { credentials: "include" });
       const d = await res.json();
       if (d.success) setData(d.data);
     } catch (err) {

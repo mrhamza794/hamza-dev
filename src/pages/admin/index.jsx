@@ -21,18 +21,21 @@ export default function AdminLogin() {
 
   const otpRefs = useRef([]);
 
+  const adminFetch = (url, options = {}) =>
+    fetch(url, { credentials: "include", ...options });
+
   useEffect(() => {
-    fetch("/api/admin/verify-session")
+    adminFetch("/api/admin/verify-session")
       .then((res) => res.json())
       .then((data) => {
         if (data.authenticated) {
-          router.replace("/admin/dashboard");
+          window.location.replace("/admin/dashboard");
         } else {
           setCheckingAuth(false);
         }
       })
       .catch(() => setCheckingAuth(false));
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -56,7 +59,7 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const res = await fetch("/api/admin/verify-credentials", {
+      const res = await adminFetch("/api/admin/verify-credentials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
@@ -82,7 +85,7 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const res = await fetch("/api/admin/send-otp", {
+      const res = await adminFetch("/api/admin/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
@@ -154,7 +157,7 @@ export default function AdminLogin() {
     setError("");
 
     try {
-      const res = await fetch("/api/admin/verify-otp", {
+      const res = await adminFetch("/api/admin/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), otp: code }),
@@ -163,7 +166,8 @@ export default function AdminLogin() {
 
       if (data.success) {
         setSuccess("Login successful! Redirecting...");
-        router.push("/admin/dashboard");
+        window.location.href = data.redirect || "/admin/dashboard";
+        return;
       } else {
         setError(data.error || "Invalid OTP");
         setOtp(["", "", "", "", "", ""]);

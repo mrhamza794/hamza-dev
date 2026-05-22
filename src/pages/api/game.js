@@ -1,40 +1,37 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import GameScore from "@/lib/models/GameScore";
 import { parseUserAgent, getRankFromScore } from "@/lib/getDeviceInfo";
 import { getClientIp, getUserAgent, lookupIpLocation } from "@/lib/requestMeta";
 import { getPersonalBest } from "@/lib/gameScores";
+import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function POST(request) {
+async function handlePost(req, res) {
   try {
     await connectDB();
 
-    const body = await request.json();
+    const body = await readJsonBody(req);
     const { playerName, score, bugsSquashed, timeSpent } = body;
 
     if (!playerName || score === undefined || score === null) {
-      return NextResponse.json(
-        { success: false, error: "Player name and score are required" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, {
+        success: false,
+        error: "Player name and score are required",
+      });
     }
 
     if (playerName.trim().length < 2 || playerName.trim().length > 20) {
-      return NextResponse.json(
-        { success: false, error: "Name must be between 2 and 20 characters" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, {
+        success: false,
+        error: "Name must be between 2 and 20 characters",
+      });
     }
 
     if (score < 0 || score > 200) {
-      return NextResponse.json(
-        { success: false, error: "Invalid score" },
-        { status: 400 }
-      );
+      return sendJson(res, 400, { success: false, error: "Invalid score" });
     }
 
-    const userAgent = getUserAgent(request);
-    const cleanIp = getClientIp(request);
+    const userAgent = getUserAgent(req);
+    const cleanIp = getClientIp(req);
     const deviceInfo = parseUserAgent(userAgent);
     const rank = getRankFromScore(score);
     const location = await lookupIpLocation(cleanIp);
@@ -55,37 +52,30 @@ export async function POST(request) {
     const rankPosition = (await GameScore.countDocuments({ score: { $gt: score } })) + 1;
     const personalBest = await getPersonalBest(gameScore.playerName);
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          id: gameScore._id,
-          playerName: gameScore.playerName,
-          score: gameScore.score,
-          rank: gameScore.rank,
-          rankPosition,
-          location: gameScore.location,
-          personalBest,
-        },
+    return sendJson(res, 201, {
+      success: true,
+      data: {
+        id: gameScore._id,
+        playerName: gameScore.playerName,
+        score: gameScore.score,
+        rank: gameScore.rank,
+        rankPosition,
+        location: gameScore.location,
+        personalBest,
       },
-      { status: 201 }
-    );
+    });
   } catch (error) {
     console.error("Game Score API Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }
 
-export async function GET(request) {
+async function handleGet(req, res) {
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") ?? "10", 10);
-    const playerName = searchParams.get("playerName");
+    const limit = parseInt(req.query.limit ?? "10", 10);
+    const playerName = req.query.playerName;
 
     const leaderboard = await GameScore.find({})
       .sort({ score: -1, playedAt: 1 })
@@ -101,7 +91,7 @@ export async function GET(request) {
 
     const personalBest = playerName ? await getPersonalBest(playerName) : null;
 
-    return NextResponse.json({
+    return sendJson(res, 200, {
       success: true,
       data: {
         leaderboard: leaderboard.map((entry, index) => ({
@@ -123,9 +113,12 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Leaderboard API Error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
+}
+
+export default async function handler(req, res) {
+  if (req.method === "POST") return handlePost(req, res);
+  if (req.method === "GET") return handleGet(req, res);
+  return methodNotAllowed(res, ["POST", "GET"]);
 }

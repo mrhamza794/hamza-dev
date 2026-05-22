@@ -1,19 +1,16 @@
-import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import GameScore from "@/lib/models/GameScore";
-import { verifyToken, COOKIE_NAME } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/requireAdmin";
+import { sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
-export async function GET(request) {
-  const token = request.cookies.get(COOKIE_NAME)?.value;
-  if (!token || !verifyToken(token)) {
-    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-  }
+export default async function handler(req, res) {
+  if (req.method !== "GET") return methodNotAllowed(res, ["GET"]);
+  if (!requireAdmin(req, res)) return;
 
   try {
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const limit = 20;
     const skip = (page - 1) * limit;
 
@@ -33,9 +30,7 @@ export async function GET(request) {
         .skip(skip)
         .limit(limit)
         .lean(),
-
       GameScore.countDocuments(),
-
       GameScore.aggregate([
         {
           $group: {
@@ -47,24 +42,20 @@ export async function GET(request) {
           },
         },
       ]),
-
       GameScore.aggregate([
         { $group: { _id: "$rank", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-
       GameScore.aggregate([
         { $group: { _id: "$device", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ]),
-
       GameScore.aggregate([
         { $match: { "location.country": { $ne: null } } },
         { $group: { _id: "$location.country", count: { $sum: 1 }, avgScore: { $avg: "$score" } } },
         { $sort: { count: -1 } },
         { $limit: 10 },
       ]),
-
       GameScore.aggregate([
         {
           $bucket: {
@@ -75,7 +66,6 @@ export async function GET(request) {
           },
         },
       ]),
-
       GameScore.aggregate([
         {
           $group: {
@@ -87,7 +77,6 @@ export async function GET(request) {
         { $sort: { _id: -1 } },
         { $limit: 30 },
       ]),
-
       GameScore.find({})
         .sort({ score: -1 })
         .limit(10)
@@ -97,7 +86,7 @@ export async function GET(request) {
 
     const stats = aggregation[0] || {};
 
-    return NextResponse.json({
+    return sendJson(res, 200, {
       success: true,
       data: {
         scores: allScores,
@@ -129,6 +118,6 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Game admin error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+    return sendJson(res, 500, { success: false, error: "Internal server error" });
   }
 }

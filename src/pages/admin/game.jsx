@@ -32,7 +32,7 @@ export default function GamePage() {
   const loadGameData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const res = await fetch(`/api/admin/game?page=${page}`);
+      const res = await fetch(`/api/admin/game?page=${page}`, { credentials: "include" });
       const d = await res.json();
       if (d.success) setData(d.data);
     } catch (err) {

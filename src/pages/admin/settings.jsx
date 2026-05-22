@@ -69,7 +69,7 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/settings")
+    fetch("/api/admin/settings", { credentials: "include" })
       .then((res) => res.json())
       .then((d) => {
         if (d.success) {
@@ -86,6 +86,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
@@ -108,7 +109,10 @@ export default function SettingsPage() {
     }
     setIsDeleting(true);
     try {
-      const res = await fetch("/api/admin/settings?target=visitors", { method: "DELETE" });
+      const res = await fetch("/api/admin/settings?target=visitors", {
+        method: "DELETE",
+        credentials: "include",
+      });
       const d = await res.json();
       if (d.success) {
         setDeleteMsg(d.message);
@@ -133,6 +137,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/admin/change-password", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentPassword,
