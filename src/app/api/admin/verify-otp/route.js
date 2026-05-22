@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { OTP } from "@/lib/models/AdminSession";
-import { verifyOTP, generateToken, getAdminEmail, COOKIE_NAME } from "@/lib/adminAuth";
+import {
+  verifyOTP,
+  generateToken,
+  verifyCredToken,
+  COOKIE_NAME,
+  CRED_COOKIE_NAME,
+  cookieOptions,
+} from "@/lib/adminAuth";
+import { getAdminCredentials } from "@/lib/adminCredentials";
 import { getIpFromRequest, parseUserAgent } from "@/lib/helpers";
 import { sendLoginNotification } from "@/lib/mailer";
 
@@ -19,9 +27,13 @@ export async function POST(request) {
       );
     }
 
-    if (email.toLowerCase() !== getAdminEmail().toLowerCase()) {
+    const credToken = request.cookies.get(CRED_COOKIE_NAME)?.value;
+    const credDecoded = verifyCredToken(credToken);
+    const { email: adminEmail } = await getAdminCredentials();
+
+    if (!credDecoded || email.toLowerCase() !== credDecoded.email || email.toLowerCase() !== adminEmail?.toLowerCase()) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: "Unauthorized. Verify credentials first." },
         { status: 401 }
       );
     }
@@ -82,7 +94,11 @@ export async function POST(request) {
     const ip = getIpFromRequest(request);
     const ua = request.headers.get("user-agent") || "";
     const deviceInfo = parseUserAgent(ua);
-    sendLoginNotification(ip, `${deviceInfo.browser.name} on ${deviceInfo.os.name}`).catch(() => {});
+    sendLoginNotification(
+      ip,
+      `${deviceInfo.browser.name} on ${deviceInfo.os.name}`,
+      adminEmail
+    ).catch(() => {});
 
     // Set cookie
     const response = NextResponse.json({
@@ -90,13 +106,8 @@ export async function POST(request) {
       message: "Login successful",
     });
 
-    response.cookies.set(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24, // 24 hours
-      path: "/",
-    });
+    response.cookies.set(COOKIE_NAME, token, cookieOptions(60 * 60 * 24));
+    response.cookies.delete(CRED_COOKIE_NAME);
 
     return response;
   } catch (error) {

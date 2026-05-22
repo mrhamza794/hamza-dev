@@ -8,10 +8,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendOTPEmail(otp) {
+export async function sendOTPEmail(otp, toEmail) {
+  if (!toEmail) {
+    throw new Error("Admin email is not configured in the database");
+  }
+
   const mailOptions = {
     from: `"HC Portfolio Admin" <${process.env.GMAIL_USER}>`,
-    to: process.env.ADMIN_EMAIL,
+    to: toEmail,
     subject: "🔐 Admin Login OTP - HC Portfolio",
     html: `
       <!DOCTYPE html>
@@ -60,10 +64,12 @@ export async function sendOTPEmail(otp) {
   await transporter.sendMail(mailOptions);
 }
 
-export async function sendLoginNotification(ipAddress, device) {
+export async function sendLoginNotification(ipAddress, device, toEmail) {
+  if (!toEmail) return;
+
   const mailOptions = {
     from: `"HC Portfolio Admin" <${process.env.GMAIL_USER}>`,
-    to: process.env.ADMIN_EMAIL,
+    to: toEmail,
     subject: "✅ Successful Admin Login - HC Portfolio",
     html: `
       <div style="font-family:sans-serif;background:#0f172a;padding:20px;border-radius:12px;color:#f8fafc;max-width:400px">

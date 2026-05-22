@@ -1,18 +1,29 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { OTP } from "@/lib/models/AdminSession";
-import { generateOTP, hashOTP, getAdminEmail } from "@/lib/adminAuth";
+import { generateOTP, hashOTP, verifyCredToken, CRED_COOKIE_NAME } from "@/lib/adminAuth";
+import { getAdminCredentials } from "@/lib/adminCredentials";
 import { sendOTPEmail } from "@/lib/mailer";
 
 export async function POST(request) {
   try {
     await connectDB();
 
+    const credToken = request.cookies.get(CRED_COOKIE_NAME)?.value;
+    const credDecoded = verifyCredToken(credToken);
+
+    if (!credDecoded) {
+      return NextResponse.json(
+        { success: false, error: "Verify email and password first" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { email } = body;
+    const { email: adminEmail } = await getAdminCredentials();
 
-    // Check if email matches admin email
-    if (!email || email.toLowerCase() !== getAdminEmail().toLowerCase()) {
+    if (!email || email.toLowerCase() !== credDecoded.email || email.toLowerCase() !== adminEmail?.toLowerCase()) {
       return NextResponse.json(
         { success: false, error: "Unauthorized email address" },
         { status: 401 }
@@ -46,8 +57,7 @@ export async function POST(request) {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // Send email
-    await sendOTPEmail(otpCode);
+    await sendOTPEmail(otpCode, adminEmail);
 
     return NextResponse.json({
       success: true,

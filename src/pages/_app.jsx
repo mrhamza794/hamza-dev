@@ -1,10 +1,13 @@
+import { useEffect } from "react";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
 import SmoothScroll from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/theme-provider";
 import { VisitorTrackingProvider } from "@/hooks/useVisitorTracking";
+import AdminLayout from "@/components/admin/AdminLayout";
 import {
   SEO,
   THEME_COLOR,
@@ -35,6 +38,36 @@ const jetbrainsMono = JetBrains_Mono({
 const jsonLd = [getPersonJsonLd(), getWebSiteJsonLd()];
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
+  const isAdminRoute = router.pathname.startsWith("/admin");
+
+  // Custom cursor hides the native pointer globally; only enable on the portfolio (not admin).
+  useEffect(() => {
+    document.documentElement.classList.toggle("portfolio-custom-cursor", !isAdminRoute);
+    document.documentElement.classList.toggle("admin-route", isAdminRoute);
+  }, [isAdminRoute]);
+
+  if (isAdminRoute) {
+    return (
+      <>
+        <Head>
+          <title>Admin | HC Portfolio</title>
+          <meta name="robots" content="noindex, nofollow" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </Head>
+        <div
+          className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`}
+        >
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+            <AdminLayout>
+              <Component {...pageProps} />
+            </AdminLayout>
+          </ThemeProvider>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Head>
