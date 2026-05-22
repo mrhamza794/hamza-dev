@@ -13,6 +13,9 @@ const nextConfig = {
     GMAIL_APP_PASSWORD: process.env.GMAIL_APP_PASSWORD,
     CONTACT_TO_EMAIL: process.env.CONTACT_TO_EMAIL,
     MONGO_URI: process.env.MONGO_URI,
+    NEXT_PUBLIC_ADMIN_PATH: process.env.NEXT_PUBLIC_ADMIN_PATH,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    JWT_SECRET: process.env.JWT_SECRET,
   },
 }
 
