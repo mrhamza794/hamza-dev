@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
 
     const credToken = generateCredToken(result.email);
-    setResponseCookies(res, [buildCredCookie(credToken)]);
+    setResponseCookies(res, [buildCredCookie(credToken, req)]);
 
     return sendJson(res, 200, {
       success: true,

@@ -176,7 +176,8 @@ export default function AdminLogin() {
 
       if (data.success) {
         setSuccess("Login successful! Redirecting...");
-        window.location.href = data.redirect || "/admin/dashboard";
+        // Full navigation so the browser applies Set-Cookie before protected routes load
+        window.location.replace(data.redirect || "/admin/dashboard");
         return;
       } else {
         setError(data.error || "Invalid OTP");

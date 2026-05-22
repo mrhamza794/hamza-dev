@@ -52,28 +52,36 @@ export function verifyCredToken(token) {
   }
 }
 
-export function cookieOptions(maxAgeSeconds) {
-  const isProd = process.env.NODE_ENV === "production";
+export function cookieOptions(maxAgeSeconds, req) {
+  const proto =
+    req?.headers?.["x-forwarded-proto"] ||
+    (typeof req?.headers?.get === "function" ? req.headers.get("x-forwarded-proto") : null);
+  const isSecure =
+    proto === "https" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL === "1" ||
+    process.env.NETLIFY === "true";
+
   return {
     httpOnly: true,
-    secure: isProd,
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     maxAge: maxAgeSeconds,
   };
 }
 
-export function buildAuthCookie(token) {
-  return serialize(COOKIE_NAME, token, cookieOptions(60 * 60 * 24));
+export function buildAuthCookie(token, req) {
+  return serialize(COOKIE_NAME, token, cookieOptions(60 * 60 * 24, req));
 }
 
-export function buildCredCookie(token) {
-  return serialize(CRED_COOKIE_NAME, token, cookieOptions(60 * 15));
+export function buildCredCookie(token, req) {
+  return serialize(CRED_COOKIE_NAME, token, cookieOptions(60 * 15, req));
 }
 
-export function buildClearCookie(name) {
+export function buildClearCookie(name, req) {
   return serialize(name, "", {
-    ...cookieOptions(0),
+    ...cookieOptions(0, req),
     maxAge: 0,
     expires: new Date(0),
   });

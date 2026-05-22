@@ -100,7 +100,10 @@ export default async function handler(req, res) {
       adminEmail
     ).catch(() => {});
 
-    setResponseCookies(res, [buildAuthCookie(token), buildClearCookie(CRED_COOKIE_NAME)]);
+    setResponseCookies(res, [
+      buildAuthCookie(token, req),
+      buildClearCookie(CRED_COOKIE_NAME, req),
+    ]);
 
     return sendJson(res, 200, {
       success: true,

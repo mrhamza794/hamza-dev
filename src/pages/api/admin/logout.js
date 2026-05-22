@@ -5,8 +5,8 @@ export default function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, ["POST"]);
 
   setResponseCookies(res, [
-    buildClearCookie(COOKIE_NAME),
-    buildClearCookie(CRED_COOKIE_NAME),
+    buildClearCookie(COOKIE_NAME, req),
+    buildClearCookie(CRED_COOKIE_NAME, req),
   ]);
 
   return sendJson(res, 200, { success: true });

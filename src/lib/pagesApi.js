@@ -70,8 +70,19 @@ export function methodNotAllowed(res, allowed = []) {
 }
 
 export function setResponseCookies(res, cookies = []) {
-  if (cookies.length) {
-    res.setHeader("Set-Cookie", cookies);
+  for (const cookie of cookies) {
+    if (typeof res.appendHeader === "function") {
+      res.appendHeader("Set-Cookie", cookie);
+    } else {
+      const existing = res.getHeader("Set-Cookie");
+      const list = existing
+        ? Array.isArray(existing)
+          ? existing
+          : [String(existing)]
+        : [];
+      list.push(cookie);
+      res.setHeader("Set-Cookie", list);
+    }
   }
 }
 

@@ -1,10 +1,23 @@
+import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
-import { verifyToken, COOKIE_NAME } from "@/lib/adminAuth";
+import { COOKIE_NAME } from "@/lib/adminAuth";
 
-export function middleware(request) {
+async function verifyAdminToken(token) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || !token) return null;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), {
+      algorithms: ["HS256"],
+    });
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // Protect all /admin routes except /admin (login page)
   if (pathname.startsWith("/admin") && pathname !== "/admin") {
     const token = request.cookies.get(COOKIE_NAME)?.value;
 
@@ -12,11 +25,9 @@ export function middleware(request) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyAdminToken(token);
     if (!decoded) {
-      const response = NextResponse.redirect(new URL("/admin", request.url));
-      response.cookies.delete(COOKIE_NAME);
-      return response;
+      return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
 
