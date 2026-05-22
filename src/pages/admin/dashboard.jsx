@@ -158,7 +158,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="admin-card p-6 xl:col-span-2">
           <h3 className="admin-heading">Daily Visitors (Last 7 Days)</h3>
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={240} minWidth={0}>
             <AreaChart data={charts.dailyVisitors.map((d) => ({ date: d._id, visitors: d.count }))}>
               <defs>
                 <linearGradient id="visitorGrad" x1="0" y1="0" x2="0" y2="1">
@@ -185,8 +185,8 @@ export default function Dashboard() {
           <h3 className="admin-heading">Device Types</h3>
           {deviceData.length > 0 ? (
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="relative mx-auto h-[180px] w-full max-w-[180px] shrink-0 sm:mx-0">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="relative mx-auto h-[180px] w-full min-w-0 max-w-[180px] shrink-0 sm:mx-0">
+                <ResponsiveContainer width="100%" height={180} minWidth={0}>
                   <PieChart>
                     <Pie
                       data={deviceData}
