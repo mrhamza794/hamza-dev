@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Monitor,
-  Smartphone,
-  Tablet,
   Clock,
   MousePointer,
   Gamepad2,
@@ -25,6 +22,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAdminChartTheme } from "@/components/admin/useAdminChartTheme";
+import VisitorsDataTable from "@/components/admin/VisitorsDataTable";
 
 const COLORS = ["#8B5CF6", "#06B6D4", "#EC4899", "#14B8A6", "#F59E0B", "#EF4444", "#10B981", "#3B82F6"];
 const TABS = ["Overview", "Visitors Table", "Geography", "Technology", "Behavior"];
@@ -63,12 +61,6 @@ export default function VisitorsPage() {
     if (!seconds) return "0s";
     if (seconds < 60) return `${Math.round(seconds)}s`;
     return `${Math.round(seconds / 60)}m ${Math.round(seconds % 60)}s`;
-  };
-
-  const DeviceIcon = ({ type }) => {
-    if (type === "mobile") return <Smartphone size={16} className="text-cyan-500 dark:text-cyan-400" />;
-    if (type === "tablet") return <Tablet size={16} className="text-pink-500 dark:text-pink-400" />;
-    return <Monitor size={16} className="text-purple-500 dark:text-purple-400" />;
   };
 
   if (loading && !data) {
@@ -170,89 +162,10 @@ export default function VisitorsPage() {
             </select>
           </div>
 
-          <div className="admin-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    {[
-                      "Device",
-                      "Browser / OS",
-                      "Location",
-                      "Source",
-                      "Time on Site",
-                      "Scroll",
-                      "Actions",
-                      "Visited",
-                    ].map((h) => (
-                      <th key={h} className="admin-th whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.visitors.map((v, i) => (
-                    <tr key={i} className="admin-tr">
-                      <td className="admin-td">
-                        <div className="flex items-center gap-2">
-                          <DeviceIcon type={v.device?.type} />
-                          <span className="admin-text-body capitalize">{v.device?.type || "desktop"}</span>
-                        </div>
-                        {v.device?.brand && (
-                          <div className="mt-0.5 text-xs admin-text-muted">
-                            {v.device.brand} {v.device.model}
-                          </div>
-                        )}
-                      </td>
-                      <td className="admin-td">
-                        <div className="admin-text-body">
-                          {v.browser?.name || "—"} {v.browser?.version?.split(".")[0]}
-                        </div>
-                        <div className="text-xs admin-text-muted">
-                          {v.os?.name} {v.os?.version}
-                        </div>
-                      </td>
-                      <td className="admin-td">
-                        <div className="admin-text-body">{v.location?.city || "—"}</div>
-                        <div className="text-xs admin-text-muted">
-                          {v.location?.country} · {v.location?.timezone}
-                        </div>
-                      </td>
-                      <td className="admin-td">
-                        <div className="max-w-[120px] truncate text-xs admin-text-muted">
-                          {v.source?.referrer || "Direct"}
-                        </div>
-                      </td>
-                      <td className="admin-td admin-text-body">{formatTime(v.behavior?.timeOnSite)}</td>
-                      <td className="admin-td admin-text-body">{v.behavior?.scrollDepth || 0}%</td>
-                      <td className="admin-td">
-                        <div className="flex gap-2">
-                          {v.behavior?.playedGame && (
-                            <span className="rounded-full bg-pink-100 px-2 py-0.5 text-xs text-pink-700 dark:bg-pink-500/20 dark:text-pink-400">
-                              🎮 Played
-                            </span>
-                          )}
-                          {v.behavior?.clickedContact && (
-                            <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-xs text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400">
-                              📧 Contact
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="admin-td">
-                        <div className="text-xs admin-text-muted">{new Date(v.visitedAt).toLocaleDateString()}</div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500">
-                          {new Date(v.visitedAt).toLocaleTimeString()}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="admin-card overflow-hidden p-4">
+            <VisitorsDataTable visitors={data.visitors} page={page} limit={20} />
 
-            <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+            <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-700">
               <div className="admin-text-muted">
                 {(page - 1) * 20 + 1}–{Math.min(page * 20, data.pagination.total)} of {data.pagination.total}
               </div>

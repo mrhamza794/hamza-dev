@@ -10,6 +10,9 @@ import {
   Shield,
   Save,
   CheckCircle,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 function Toggle({ enabled, onChange, label, description, icon: Icon, color }) {
@@ -54,12 +57,25 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings")
       .then((res) => res.json())
       .then((d) => {
-        if (d.success) setSettings(d.data);
+        if (d.success) {
+          setSettings(d.data);
+          setAdminEmail(d.data.adminEmail || "");
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -109,6 +125,41 @@ export default function SettingsPage() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleChangePassword = async () => {
+    setPasswordSaving(true);
+    setPasswordMsg("");
+    setPasswordError(false);
+
+    try {
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+      const d = await res.json();
+
+      if (d.success) {
+        setPasswordMsg(d.message || "Password updated successfully");
+        setPasswordError(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setPasswordMsg(d.error || "Failed to update password");
+        setPasswordError(true);
+      }
+    } catch {
+      setPasswordMsg("Network error. Please try again.");
+      setPasswordError(true);
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -118,7 +169,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <div className="admin-card space-y-4 p-6">
         <h2 className="admin-title mb-6 flex items-center gap-2">
           <Settings size={20} className="text-purple-500 dark:text-purple-400" />
@@ -174,6 +226,110 @@ export default function SettingsPage() {
         />
       </div>
 
+      <div className="admin-card space-y-4 p-6">
+        <h2 className="admin-title mb-2 flex items-center gap-2">
+          <KeyRound size={20} className="text-purple-500 dark:text-purple-400" />
+          Change Password
+        </h2>
+        {adminEmail && (
+          <p className="admin-text-muted">
+            Admin account: <span className="font-medium text-slate-800 dark:text-slate-200">{adminEmail}</span>
+          </p>
+        )}
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Current password</label>
+          <div className="relative">
+            <input
+              type={showCurrentPassword ? "text" : "password"}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="admin-input pr-12"
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+            >
+              {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">New password</label>
+          <div className="relative">
+            <input
+              type={showNewPassword ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="admin-input pr-12"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword(!showNewPassword)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label={showNewPassword ? "Hide password" : "Show password"}
+            >
+              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <p className="mt-1 text-xs admin-text-muted">At least 8 characters</p>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Confirm new password</label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="admin-input pr-12"
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {passwordMsg && (
+          <p
+            className={`text-sm ${passwordError ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
+          >
+            {passwordMsg}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleChangePassword}
+          disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-800 py-3 font-semibold text-white transition-all hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600"
+        >
+          {passwordSaving ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Updating...
+            </>
+          ) : (
+            <>
+              <KeyRound size={18} />
+              Update Password
+            </>
+          )}
+        </button>
+      </div>
+      </div>
+
       <button
         type="button"
         onClick={handleSave}
@@ -202,63 +358,65 @@ export default function SettingsPage() {
         )}
       </button>
 
-      <div className="admin-danger-zone">
-        <h2 className="mb-6 flex items-center gap-2 font-semibold text-red-600 dark:text-red-400">
-          <AlertTriangle size={20} />
-          Danger Zone
-        </h2>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="admin-danger-zone">
+          <h2 className="mb-6 flex items-center gap-2 font-semibold text-red-600 dark:text-red-400">
+            <AlertTriangle size={20} />
+            Danger Zone
+          </h2>
 
-        <div className="space-y-4">
-          <p className="admin-text-muted">
-            Delete all visitor tracking data from the database. This action cannot be undone.
-          </p>
-
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={deleteConfirm}
-              onChange={(e) => {
-                setDeleteConfirm(e.target.value);
-                setDeleteMsg("");
-              }}
-              placeholder='Type "DELETE" to confirm'
-              className="admin-input flex-1 border-red-200 dark:border-red-800"
-            />
-            <button
-              type="button"
-              onClick={handleDeleteVisitors}
-              disabled={isDeleting}
-              className="flex items-center gap-2 rounded-xl border border-red-300 bg-red-100 px-6 py-3 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50 dark:border-red-800 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950"
-            >
-              {isDeleting ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
-              ) : (
-                <Trash2 size={16} />
-              )}
-              Delete All Visitors
-            </button>
-          </div>
-
-          {deleteMsg && (
-            <p
-              className={`text-sm ${deleteMsg.includes("Deleted") ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
-            >
-              {deleteMsg}
+          <div className="space-y-4">
+            <p className="admin-text-muted">
+              Delete all visitor tracking data from the database. This action cannot be undone.
             </p>
-          )}
-        </div>
-      </div>
 
-      <div className="admin-card p-6">
-        <h2 className="admin-title mb-4 flex items-center gap-2">
-          <Shield size={20} className="text-purple-500 dark:text-purple-400" />
-          Session Info
-        </h2>
-        <p className="admin-text-muted">
-          Admin sessions expire after <span className="font-medium text-purple-600 dark:text-purple-400">24 hours</span>.
-          OTP tokens expire after <span className="font-medium text-purple-600 dark:text-purple-400">10 minutes</span>. Max{" "}
-          <span className="font-medium text-purple-600 dark:text-purple-400">5 OTP attempts</span> before lockout.
-        </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                value={deleteConfirm}
+                onChange={(e) => {
+                  setDeleteConfirm(e.target.value);
+                  setDeleteMsg("");
+                }}
+                placeholder='Type "DELETE" to confirm'
+                className="admin-input flex-1 border-red-200 dark:border-red-800"
+              />
+              <button
+                type="button"
+                onClick={handleDeleteVisitors}
+                disabled={isDeleting}
+                className="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-100 px-6 py-3 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50 dark:border-red-800 dark:bg-red-950/50 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {isDeleting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                Delete All Visitors
+              </button>
+            </div>
+
+            {deleteMsg && (
+              <p
+                className={`text-sm ${deleteMsg.includes("Deleted") ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+              >
+                {deleteMsg}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="admin-card p-6">
+          <h2 className="admin-title mb-4 flex items-center gap-2">
+            <Shield size={20} className="text-purple-500 dark:text-purple-400" />
+            Session Info
+          </h2>
+          <p className="admin-text-muted">
+            Admin sessions expire after <span className="font-medium text-purple-600 dark:text-purple-400">24 hours</span>.
+            OTP tokens expire after <span className="font-medium text-purple-600 dark:text-purple-400">10 minutes</span>. Max{" "}
+            <span className="font-medium text-purple-600 dark:text-purple-400">5 OTP attempts</span> before lockout.
+          </p>
+        </div>
       </div>
     </div>
   );

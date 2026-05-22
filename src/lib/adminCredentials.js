@@ -107,3 +107,29 @@ export async function updateAdminPassword(newPassword) {
 
   return { ok: true };
 }
+
+export async function changeAdminPassword(currentPassword, newPassword) {
+  if (!currentPassword) {
+    return { ok: false, error: "Current password is required" };
+  }
+
+  if (!newPassword || newPassword.length < 8) {
+    return { ok: false, error: "New password must be at least 8 characters" };
+  }
+
+  if (currentPassword === newPassword) {
+    return { ok: false, error: "New password must be different from the current password" };
+  }
+
+  const { passwordHash } = await getAdminCredentials();
+
+  if (!passwordHash) {
+    return { ok: false, error: "Admin password is not configured" };
+  }
+
+  if (!bcrypt.compareSync(currentPassword, passwordHash)) {
+    return { ok: false, error: "Current password is incorrect" };
+  }
+
+  return updateAdminPassword(newPassword);
+}

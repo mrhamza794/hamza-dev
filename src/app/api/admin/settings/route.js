@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
 import { AdminSettings } from "@/lib/models/AdminSession";
 import { verifyToken, COOKIE_NAME } from "@/lib/adminAuth";
+import { getAdminCredentials } from "@/lib/adminCredentials";
 
 export async function GET(request) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -19,9 +20,12 @@ export async function GET(request) {
       settingsMap[s.key] = s.value;
     });
 
+    const { email: adminEmail } = await getAdminCredentials();
+
     return NextResponse.json({
       success: true,
       data: {
+        adminEmail: adminEmail || "",
         siteMaintenance: settingsMap.siteMaintenance || false,
         maintenanceMessage: settingsMap.maintenanceMessage || "Site under maintenance. Coming back soon!",
         allowNewContacts: settingsMap.allowNewContacts !== false,
@@ -44,8 +48,16 @@ export async function PATCH(request) {
     await connectDB();
 
     const body = await request.json();
+    const allowedKeys = [
+      "siteMaintenance",
+      "maintenanceMessage",
+      "allowNewContacts",
+      "allowGameScores",
+      "analyticsEnabled",
+    ];
 
     for (const [key, value] of Object.entries(body)) {
+      if (!allowedKeys.includes(key)) continue;
       await AdminSettings.findOneAndUpdate({ key }, { key, value }, { upsert: true, new: true });
     }
 

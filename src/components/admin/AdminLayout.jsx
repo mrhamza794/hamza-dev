@@ -116,7 +116,7 @@ export default function AdminLayout({ children }) {
       )}
 
       <div className="flex min-h-screen flex-1 flex-col md:ml-64">
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur-xl dark:border-white/6 dark:bg-slate-900/80">
+        <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -150,7 +150,7 @@ export default function AdminLayout({ children }) {
           </div>
         </header>
 
-        <main className="admin-page flex-1 bg-slate-50 p-6 text-slate-900 dark:bg-slate-950/50 dark:text-slate-100">
+        <main className="admin-page flex-1 bg-slate-100 p-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
           {children}
         </main>
       </div>

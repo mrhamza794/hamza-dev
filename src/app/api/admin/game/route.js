@@ -91,7 +91,7 @@ export async function GET(request) {
       GameScore.find({})
         .sort({ score: -1 })
         .limit(10)
-        .select("playerName score rank location device createdAt")
+        .select("playerName score bugsSquashed rank location device createdAt")
         .lean(),
     ]);
 

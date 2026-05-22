@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Trophy, Bug, Gamepad2, TrendingUp, ChevronLeft, ChevronRight, Monitor, Smartphone } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Trophy, Bug, Gamepad2, TrendingUp, ChevronLeft, ChevronRight, Monitor, Smartphone, Pencil } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAdminChartTheme } from "@/components/admin/useAdminChartTheme";
+import GameScoreEditModal from "@/components/admin/GameScoreEditModal";
 
 const COLORS = ["#8B5CF6", "#06B6D4", "#EC4899", "#14B8A6", "#F59E0B", "#EF4444", "#10B981"];
 const TABS = ["Overview", "Leaderboard", "Score Analysis", "Player Insights"];
@@ -24,17 +25,31 @@ export default function GamePage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
   const [page, setPage] = useState(1);
+  const [editingScore, setEditingScore] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const chart = useAdminChartTheme();
 
-  useEffect(() => {
-    fetch(`/api/admin/game?page=${page}`)
-      .then((res) => res.json())
-      .then((d) => {
-        if (d.success) setData(d.data);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+  const loadGameData = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`/api/admin/game?page=${page}`);
+      const d = await res.json();
+      if (d.success) setData(d.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [page]);
+
+  useEffect(() => {
+    loadGameData();
+  }, [loadGameData]);
+
+  const handleScoreSaved = () => {
+    loadGameData();
+  };
 
   if (loading && !data) {
     return (
@@ -46,6 +61,14 @@ export default function GamePage() {
 
   return (
     <div className="space-y-6">
+      {editingScore && (
+        <GameScoreEditModal
+          score={editingScore}
+          onClose={() => setEditingScore(null)}
+          onSaved={handleScoreSaved}
+        />
+      )}
+
       <div className="flex flex-wrap gap-2">
         {TABS.map((tab) => (
           <button
@@ -109,7 +132,7 @@ export default function GamePage() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {["Rank", "Player", "Score", "Badge", "Country", "Device", "Date"].map((h) => (
+                    {["Rank", "Player", "Score", "Badge", "Country", "Device", "Date", "Actions"].map((h) => (
                       <th key={h} className="admin-th whitespace-nowrap">
                         {h}
                       </th>
@@ -118,7 +141,7 @@ export default function GamePage() {
                 </thead>
                 <tbody>
                   {data.topPlayers.map((p, i) => (
-                    <tr key={i} className="admin-tr">
+                    <tr key={p._id || i} className="admin-tr">
                       <td className="admin-td text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}</td>
                       <td className="admin-td-bold">{p.playerName}</td>
                       <td className="admin-td">
@@ -143,6 +166,16 @@ export default function GamePage() {
                         )}
                       </td>
                       <td className="admin-td admin-text-muted">{new Date(p.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-td">
+                        <button
+                          type="button"
+                          onClick={() => setEditingScore(p)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:border-slate-600 dark:text-purple-400 dark:hover:bg-purple-500/10"
+                        >
+                          <Pencil size={14} />
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -158,7 +191,7 @@ export default function GamePage() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {["#", "Player", "Score", "Bugs", "Badge", "Location", "Device", "Date"].map((h) => (
+                    {["#", "Player", "Score", "Bugs", "Badge", "Location", "Device", "Date", "Actions"].map((h) => (
                       <th key={h} className="admin-th whitespace-nowrap">
                         {h}
                       </th>
@@ -167,7 +200,7 @@ export default function GamePage() {
                 </thead>
                 <tbody>
                   {data.scores.map((s, i) => (
-                    <tr key={i} className="admin-tr">
+                    <tr key={s._id || i} className="admin-tr">
                       <td className="admin-td admin-text-muted">{(page - 1) * 20 + i + 1}</td>
                       <td className="admin-td-bold">{s.playerName}</td>
                       <td className="admin-td font-bold text-purple-600 dark:text-purple-400">{s.score}</td>
@@ -179,6 +212,16 @@ export default function GamePage() {
                       </td>
                       <td className="admin-td admin-text-muted capitalize">{s.device || "—"}</td>
                       <td className="admin-td text-xs admin-text-muted">{new Date(s.createdAt).toLocaleDateString()}</td>
+                      <td className="admin-td">
+                        <button
+                          type="button"
+                          onClick={() => setEditingScore(s)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:border-slate-600 dark:text-purple-400 dark:hover:bg-purple-500/10"
+                        >
+                          <Pencil size={14} />
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -187,6 +230,7 @@ export default function GamePage() {
             <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-700">
               <div className="admin-text-muted">
                 {(page - 1) * 20 + 1}–{Math.min(page * 20, data.pagination.total)} of {data.pagination.total}
+                {refreshing && <span className="ml-2 text-purple-500">Updating…</span>}
               </div>
               <div className="flex items-center gap-2">
                 <button
