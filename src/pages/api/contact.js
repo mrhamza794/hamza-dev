@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongodb";
 import Contact from "@/lib/models/Contact";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { parseUserAgent } from "@/lib/getDeviceInfo";
 import { sendContactEmail } from "@/lib/contactEmail";
 import { getClientIp, getUserAgent } from "@/lib/requestMeta";
@@ -7,6 +8,22 @@ import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 async function handlePost(req, res) {
   try {
+    const settings = await getSiteSettings();
+
+    if (settings.siteMaintenance) {
+      return sendJson(res, 503, {
+        success: false,
+        error: "Site is under maintenance. Please try again later.",
+      });
+    }
+
+    if (!settings.allowNewContacts) {
+      return sendJson(res, 403, {
+        success: false,
+        error: "Contact form is currently unavailable.",
+      });
+    }
+
     await connectDB();
 
     const body = await readJsonBody(req);

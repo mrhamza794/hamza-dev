@@ -6,7 +6,7 @@ import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 export default async function handler(req, res) {
   if (req.method !== "PATCH") return methodNotAllowed(res, ["PATCH"]);
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   try {
     const id = req.query.id;

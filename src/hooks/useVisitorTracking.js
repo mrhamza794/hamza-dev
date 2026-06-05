@@ -28,21 +28,23 @@ function patchBehavior(sessionId, behavior) {
   }).catch(console.error);
 }
 
-function useVisitorTrackingCore() {
+function useVisitorTrackingCore(enabled) {
   const trackedRef = useRef(false);
   const startTimeRef = useRef(Date.now());
   const sessionId = useRef(null);
 
   const trackContactClick = useCallback(() => {
+    if (!enabled) return;
     patchBehavior(sessionId.current, { clickedContact: true });
-  }, []);
+  }, [enabled]);
 
   const trackGamePlayed = useCallback(() => {
+    if (!enabled) return;
     patchBehavior(sessionId.current, { playedGame: true });
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    if (trackedRef.current) return;
+    if (!enabled || trackedRef.current) return;
     trackedRef.current = true;
 
     sessionId.current = getOrCreateSessionId();
@@ -134,13 +136,13 @@ function useVisitorTrackingCore() {
         new Blob([payload], { type: "application/json" })
       );
     };
-  }, []);
+  }, [enabled]);
 
   return { trackContactClick, trackGamePlayed };
 }
 
-export function VisitorTrackingProvider({ children }) {
-  const value = useVisitorTrackingCore();
+export function VisitorTrackingProvider({ children, enabled = true }) {
+  const value = useVisitorTrackingCore(enabled);
   return (
     <VisitorTrackingContext.Provider value={value}>{children}</VisitorTrackingContext.Provider>
   );

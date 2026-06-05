@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { parseUserAgent } from "@/lib/getDeviceInfo";
 import { getClientIp, getUserAgent, lookupIpLocationFull } from "@/lib/requestMeta";
 import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
@@ -37,6 +38,12 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, ["POST"]);
 
   try {
+    const settings = await getSiteSettings();
+
+    if (settings.siteMaintenance || !settings.analyticsEnabled) {
+      return sendJson(res, 200, { success: true, message: "Tracking disabled" });
+    }
+
     await connectDB();
 
     const body = await readJsonBody(req);

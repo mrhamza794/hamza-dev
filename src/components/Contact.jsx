@@ -4,6 +4,7 @@ import { Send, Mail, User, MessageSquare, MapPin, Phone, AlertCircle } from "luc
 import { PERSONAL_INFO } from "@/lib/constants";
 import { useTheme } from "next-themes";
 import { useVisitorTracking } from "@/hooks/useVisitorTracking";
+import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 
 const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
   <motion.div 
@@ -26,6 +27,7 @@ const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
 const Contact = () => {
   const { theme } = useTheme();
   const { trackContactClick } = useVisitorTracking();
+  const { allowNewContacts } = useSiteSettings();
   const [formState, setFormState] = useState("idle"); // idle | typing | submitting | success | error
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [errorMsg, setErrorMsg] = useState("");
@@ -58,6 +60,12 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!allowNewContacts) {
+      setFormState("error");
+      setErrorMsg("The contact form is temporarily unavailable. Please email directly.");
+      return;
+    }
 
     const form = e.currentTarget;
     const fd = new FormData(form);
@@ -153,6 +161,23 @@ const Contact = () => {
               Send a Message
             </motion.h3>
 
+            {!allowNewContacts && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+              >
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  New messages are paused right now. You can still reach me at{" "}
+                  <a href={`mailto:${PERSONAL_INFO.email}`} className="font-medium underline">
+                    {PERSONAL_INFO.email}
+                  </a>
+                  .
+                </span>
+              </motion.div>
+            )}
+
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 relative" noValidate>
               <motion.div variants={formHingeVariant} className="relative group">
                 <input
@@ -164,7 +189,8 @@ const Contact = () => {
                   onChange={handleInputChange}
                   onInput={handleInputChange}
                   placeholder="Your Name"
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  disabled={!allowNewContacts}
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <User size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -179,7 +205,8 @@ const Contact = () => {
                   onChange={handleInputChange}
                   onInput={handleInputChange}
                   placeholder="Email Address"
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors"
+                  disabled={!allowNewContacts}
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <Mail size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -194,7 +221,8 @@ const Contact = () => {
                   onChange={handleInputChange}
                   onInput={handleInputChange}
                   placeholder="Project details..."
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none"
+                  disabled={!allowNewContacts}
+                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <MessageSquare size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -208,7 +236,7 @@ const Contact = () => {
               <motion.button
                 variants={formHingeVariant}
                 type="submit"
-                disabled={formState === "submitting" || formState === "success"}
+                disabled={!allowNewContacts || formState === "submitting" || formState === "success"}
                 className={`contact-form-submit w-full py-4 rounded-xl font-bold tracking-wide flex items-center justify-center gap-2 transition-all ${
                    formState === "success" 
                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 cursor-default" 

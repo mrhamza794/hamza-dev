@@ -4,7 +4,7 @@ import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return methodNotAllowed(res, ["POST"]);
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   try {
     const body = await readJsonBody(req);

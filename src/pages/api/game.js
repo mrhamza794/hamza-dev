@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongodb";
 import GameScore from "@/lib/models/GameScore";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { parseUserAgent, getRankFromScore } from "@/lib/getDeviceInfo";
 import { getClientIp, getUserAgent, lookupIpLocation } from "@/lib/requestMeta";
 import { getPersonalBest } from "@/lib/gameScores";
@@ -7,6 +8,11 @@ import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 async function handlePost(req, res) {
   try {
+    const settings = await getSiteSettings();
+    if (settings.siteMaintenance) {
+      return sendJson(res, 503, { success: false, error: "Site is under maintenance." });
+    }
+
     await connectDB();
 
     const body = await readJsonBody(req);
@@ -72,6 +78,11 @@ async function handlePost(req, res) {
 
 async function handleGet(req, res) {
   try {
+    const settings = await getSiteSettings();
+    if (settings.siteMaintenance) {
+      return sendJson(res, 503, { success: false, error: "Site is under maintenance." });
+    }
+
     await connectDB();
 
     const limit = parseInt(req.query.limit ?? "10", 10);

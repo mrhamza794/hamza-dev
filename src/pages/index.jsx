@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getSiteSettings } from "@/lib/siteSettings";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import dynamic from "next/dynamic";
@@ -24,6 +25,25 @@ const Contact = dynamic(() => import("@/components/Contact"), {
     <div className="w-full h-screen flex items-center justify-center text-slate-500">Loading Contact...</div>
   ),
 });
+
+export async function getServerSideProps() {
+  const settings = await getSiteSettings();
+
+  if (settings.siteMaintenance) {
+    return {
+      redirect: {
+        destination: "/maintenance",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      siteSettings: settings,
+    },
+  };
+}
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);

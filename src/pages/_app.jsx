@@ -4,9 +4,12 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import CustomCursor from "@/components/CustomCursor";
 import ScrollProgress from "@/components/ScrollProgress";
-import SmoothScroll from "@/components/SmoothScroll";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { VisitorTrackingProvider } from "@/hooks/useVisitorTracking";
+import { SiteSettingsProvider, useSiteSettings } from "@/contexts/SiteSettingsContext";
+import { applyPerformanceClass, getPerformanceTier, shouldUseCustomCursor } from "@/lib/performance";
+import { scrollToHash } from "@/lib/scroll";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
   SEO,
@@ -37,15 +40,63 @@ const jetbrainsMono = JetBrains_Mono({
 
 const jsonLd = [getPersonJsonLd(), getWebSiteJsonLd()];
 
-export default function App({ Component, pageProps }) {
+function PortfolioShell({ Component, pageProps }) {
+  const settings = useSiteSettings();
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <VisitorTrackingProvider enabled={settings.analyticsEnabled}>
+        <ScrollProgress />
+        <CustomCursor />
+        <div className="relative z-10">
+          <Component {...pageProps} />
+        </div>
+      </VisitorTrackingProvider>
+    </ThemeProvider>
+  );
+}
+
+export default function App({ Component, pageProps: { session, ...pageProps } }) {
   const router = useRouter();
   const isAdminRoute = router.pathname.startsWith("/admin");
+  const isMaintenanceRoute = router.pathname === "/maintenance";
 
   // Custom cursor hides the native pointer globally; only enable on the portfolio (not admin).
   useEffect(() => {
-    document.documentElement.classList.toggle("portfolio-custom-cursor", !isAdminRoute);
+    const tier = getPerformanceTier();
+    applyPerformanceClass(tier);
+    document.documentElement.classList.toggle(
+      "portfolio-custom-cursor",
+      !isAdminRoute && !isMaintenanceRoute && shouldUseCustomCursor(tier)
+    );
     document.documentElement.classList.toggle("admin-route", isAdminRoute);
-  }, [isAdminRoute]);
+
+    if (!isAdminRoute && !isMaintenanceRoute) {
+      requestAnimationFrame(() => {
+        const { hash } = window.location;
+        if (hash) scrollToHash(hash);
+      });
+    }
+  }, [isAdminRoute, isMaintenanceRoute]);
+
+  if (isMaintenanceRoute) {
+    return (
+      <>
+        <Head>
+          <title>Maintenance | HC Portfolio</title>
+          <meta name="robots" content="noindex, nofollow" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </Head>
+        <div
+          className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`}
+        >
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+            <Component {...pageProps} />
+          </ThemeProvider>
+        </div>
+      </>
+    );
+  }
 
   if (isAdminRoute) {
     return (
@@ -55,15 +106,17 @@ export default function App({ Component, pageProps }) {
           <meta name="robots" content="noindex, nofollow" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
-        <div
-          className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen bg-slate-100 dark:bg-slate-950`}
-        >
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-            <AdminLayout>
-              <Component {...pageProps} />
-            </AdminLayout>
-          </ThemeProvider>
-        </div>
+        <SessionProvider session={session}>
+          <div
+            className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen bg-slate-100 dark:bg-slate-950`}
+          >
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+              <AdminLayout>
+                <Component {...pageProps} />
+              </AdminLayout>
+            </ThemeProvider>
+          </div>
+        </SessionProvider>
       </>
     );
   }
@@ -113,20 +166,15 @@ export default function App({ Component, pageProps }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </Head>
-      <div
-        className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <VisitorTrackingProvider>
-            <SmoothScroll />
-            <ScrollProgress />
-            <CustomCursor />
-            <div className="relative z-10">
-              <Component {...pageProps} />
-            </div>
-          </VisitorTrackingProvider>
-        </ThemeProvider>
-      </div>
+      <SessionProvider session={session}>
+        <div
+          className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} min-h-screen`}
+        >
+          <SiteSettingsProvider initialSettings={pageProps.siteSettings}>
+            <PortfolioShell Component={Component} pageProps={pageProps} />
+          </SiteSettingsProvider>
+        </div>
+      </SessionProvider>
     </>
   );
 }

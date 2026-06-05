@@ -1,11 +1,18 @@
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 export default async function handler(req, res) {
   if (req.method !== "PATCH") return methodNotAllowed(res, ["PATCH"]);
 
   try {
+    const settings = await getSiteSettings();
+
+    if (settings.siteMaintenance || !settings.analyticsEnabled) {
+      return sendJson(res, 200, { success: true, message: "Tracking disabled" });
+    }
+
     await connectDB();
 
     const body = await readJsonBody(req);

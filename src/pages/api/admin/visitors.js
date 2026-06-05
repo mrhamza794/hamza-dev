@@ -5,7 +5,7 @@ import { sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return methodNotAllowed(res, ["GET"]);
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   try {
     await connectDB();

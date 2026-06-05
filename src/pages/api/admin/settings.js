@@ -1,6 +1,7 @@
 import connectDB from "@/lib/mongodb";
 import Visitor from "@/lib/models/Visitor";
 import { AdminSettings } from "@/lib/models/AdminSession";
+import { getSiteSettings } from "@/lib/siteSettings";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { getAdminCredentials } from "@/lib/adminCredentials";
 import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
@@ -9,24 +10,14 @@ async function handleGet(req, res) {
   try {
     await connectDB();
 
-    const settings = await AdminSettings.find({}).lean();
-    const settingsMap = {};
-    settings.forEach((s) => {
-      settingsMap[s.key] = s.value;
-    });
-
+    const siteSettings = await getSiteSettings();
     const { email: adminEmail } = await getAdminCredentials();
 
     return sendJson(res, 200, {
       success: true,
       data: {
         adminEmail: adminEmail || "",
-        siteMaintenance: settingsMap.siteMaintenance || false,
-        maintenanceMessage:
-          settingsMap.maintenanceMessage || "Site under maintenance. Coming back soon!",
-        allowNewContacts: settingsMap.allowNewContacts !== false,
-        allowGameScores: settingsMap.allowGameScores !== false,
-        analyticsEnabled: settingsMap.analyticsEnabled !== false,
+        ...siteSettings,
       },
     });
   } catch {
@@ -43,7 +34,6 @@ async function handlePatch(req, res) {
       "siteMaintenance",
       "maintenanceMessage",
       "allowNewContacts",
-      "allowGameScores",
       "analyticsEnabled",
     ];
 
@@ -78,7 +68,7 @@ async function handleDelete(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   if (req.method === "GET") return handleGet(req, res);
   if (req.method === "PATCH") return handlePatch(req, res);

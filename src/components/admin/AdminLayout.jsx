@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -46,7 +47,7 @@ export default function AdminLayout({ children }) {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
-    router.replace("/admin");
+    await signOut({ callbackUrl: "/admin" });
   };
 
   if (isLoginPage) return children;

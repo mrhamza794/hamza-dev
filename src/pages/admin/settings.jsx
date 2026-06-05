@@ -3,7 +3,6 @@ import {
   Settings,
   Power,
   MessageSquare,
-  Gamepad2,
   BarChart2,
   Trash2,
   AlertTriangle,
@@ -48,7 +47,6 @@ export default function SettingsPage() {
     siteMaintenance: false,
     maintenanceMessage: "Site under maintenance. Coming back soon!",
     allowNewContacts: true,
-    allowGameScores: true,
     analyticsEnabled: true,
   });
   const [loading, setLoading] = useState(true);
@@ -213,15 +211,6 @@ export default function SettingsPage() {
         />
 
         <Toggle
-          enabled={settings.allowGameScores}
-          onChange={(v) => updateSetting("allowGameScores", v)}
-          label="Accept Game Scores"
-          description="Allow saving new game scores to leaderboard"
-          icon={Gamepad2}
-          color="#EC4899"
-        />
-
-        <Toggle
           enabled={settings.analyticsEnabled}
           onChange={(v) => updateSetting("analyticsEnabled", v)}
           label="Visitor Analytics"
@@ -307,9 +296,7 @@ export default function SettingsPage() {
         </div>
 
         {passwordMsg && (
-          <p
-            className={`text-sm ${passwordError ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
-          >
+          <p className={`text-sm ${passwordError ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
             {passwordMsg}
           </p>
         )}
@@ -333,6 +320,7 @@ export default function SettingsPage() {
           )}
         </button>
       </div>
+
       </div>
 
       <button
@@ -417,9 +405,9 @@ export default function SettingsPage() {
             Session Info
           </h2>
           <p className="admin-text-muted">
-            Admin sessions expire after <span className="font-medium text-purple-600 dark:text-purple-400">24 hours</span>.
-            OTP tokens expire after <span className="font-medium text-purple-600 dark:text-purple-400">10 minutes</span>. Max{" "}
-            <span className="font-medium text-purple-600 dark:text-purple-400">5 OTP attempts</span> before lockout.
+            Sign in with Google or email/password + OTP. Sessions expire after{" "}
+            <span className="font-medium text-purple-600 dark:text-purple-400">24 hours</span>. OTP tokens expire after{" "}
+            <span className="font-medium text-purple-600 dark:text-purple-400">10 minutes</span>.
           </p>
         </div>
       </div>
