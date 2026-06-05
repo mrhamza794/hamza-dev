@@ -7,6 +7,7 @@ import {
   Users,
   Gamepad2,
   Settings,
+  MapPin,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/visitors", icon: Users, label: "Visitors" },
   { href: "/admin/game", icon: Gamepad2, label: "Game Analytics" },
+  { href: "/admin/leads", icon: MapPin, label: "OSM Leads" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
