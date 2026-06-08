@@ -1,5 +1,27 @@
 import GoogleProvider from "next-auth/providers/google";
 
+/** NextAuth callback: {NEXTAUTH_URL}/api/auth/callback/google — must match Google Cloud Console. */
+function resolveAuthUrl() {
+  const explicit = process.env.NEXTAUTH_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (siteUrl && !siteUrl.includes("localhost")) {
+    return siteUrl.replace(/\/$/, "");
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) {
+    return `https://${vercelUrl.replace(/\/$/, "")}`;
+  }
+
+  return "http://localhost:3000";
+}
+
+if (!process.env.NEXTAUTH_URL?.trim()) {
+  process.env.NEXTAUTH_URL = resolveAuthUrl();
+}
+
 export function getAdminEmail() {
   return (
     process.env.ADMIN_GOOGLE_EMAIL ||
@@ -12,6 +34,7 @@ export function getAdminEmail() {
 }
 
 export const authOptions = {
+  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,

@@ -44,6 +44,10 @@ export default function AdminLogin() {
     const authError = router.query.error;
     if (authError === "AccessDenied") {
       setError("Access denied. Only the authorized Google account can sign in.");
+    } else if (authError === "OAuthCallback" || authError === "Configuration") {
+      setError(
+        "Google sign-in is misconfigured for this domain. Ensure NEXTAUTH_URL and the Google OAuth redirect URI match your live site URL."
+      );
     } else if (authError) {
       setError("Google sign-in failed. Please try again.");
     }
