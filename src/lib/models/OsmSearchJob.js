@@ -35,8 +35,7 @@ const OsmSearchJobSchema = new mongoose.Schema(
     totalSteps: { type: Number, default: 0 },
     completedSteps: { type: Number, default: 0 },
     rawCount: { type: Number, default: 0 },
-    results: { type: Array, default: [] },
-    seenKeys: { type: [String], default: [] },
+    matchedCount: { type: Number, default: 0 },
     error: { type: String, default: null },
     searchArea: {
       kmLat: Number,

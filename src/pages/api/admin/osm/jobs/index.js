@@ -48,7 +48,7 @@ export default async function handler(req, res) {
 
     return sendJson(res, 201, {
       success: true,
-      data: jobToClient(job),
+      data: await jobToClient(job),
     });
   } catch (error) {
     console.error("OSM job create error:", error);

@@ -1,5 +1,6 @@
 import connectDB from "@/lib/mongodb";
 import OsmSearchJob from "@/lib/models/OsmSearchJob";
+import OsmSearchResult from "@/lib/models/OsmSearchResult";
 import { getBusinessTypeById, getFilterSetsForSearch } from "@/lib/osm/businessTypes";
 import {
   formatSearchArea,
@@ -12,6 +13,8 @@ import { normalizeOsmElement, filterPois } from "@/lib/osm/normalizePoi";
 
 const TICK_BUDGET_MS = 22_000;
 const CHUNK_SIZE = 1;
+
+const JOB_SELECT = "-results -seenKeys";
 
 function buildMeta(job) {
   return {
@@ -27,6 +30,28 @@ function buildMeta(job) {
 
 function countSteps(tiles, filterCount, chunkSize) {
   return tiles.length * Math.ceil(filterCount / chunkSize);
+}
+
+async function loadJobResults(jobId) {
+  return OsmSearchResult.find({ jobId })
+    .select("-__v -jobId -createdAt -updatedAt")
+    .lean();
+}
+
+async function insertJobResults(jobId, pois) {
+  if (!pois.length) return 0;
+
+  const docs = pois.map((poi) => ({ jobId, ...poi }));
+
+  try {
+    const inserted = await OsmSearchResult.insertMany(docs, { ordered: false });
+    return inserted.length;
+  } catch (err) {
+    if (err.name === "MongoBulkWriteError" || err.code === 11000) {
+      return err.insertedDocs?.length ?? err.result?.insertedCount ?? 0;
+    }
+    throw err;
+  }
 }
 
 export async function createSearchJob(payload) {
@@ -65,13 +90,15 @@ export async function createSearchJob(payload) {
     chunkSize,
     totalSteps: countSteps(tiles, filterSets.length, chunkSize),
     searchArea,
+    matchedCount: 0,
   });
 
   return job.toObject();
 }
 
-export function jobToClient(job) {
-  const filtered = filterPois(job.results || []);
+export async function jobToClient(job) {
+  const items = await loadJobResults(job._id);
+  const filtered = filterPois(items);
   const progress =
     job.totalSteps > 0 ? Math.round((job.completedSteps / job.totalSteps) * 100) : 0;
 
@@ -113,14 +140,16 @@ async function processOneChunk(job) {
     const elements = await queryTileFilterSets(tile, chunk);
     job.rawCount += elements.length;
 
-    const seen = new Set(job.seenKeys || []);
+    const pois = [];
     for (const el of elements) {
-      const key = `${el.type}-${el.id}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      job.results.push(normalizeOsmElement(el, meta));
+      const poi = normalizeOsmElement(el, meta);
+      if (filterPois([poi]).length) {
+        pois.push(poi);
+      }
     }
-    job.seenKeys = [...seen];
+
+    const inserted = await insertJobResults(job._id, pois);
+    job.matchedCount = (job.matchedCount || 0) + inserted;
   } catch (err) {
     console.warn("Job chunk skipped:", err.message);
   }
@@ -144,7 +173,7 @@ async function processOneChunk(job) {
 export async function tickSearchJob(jobId) {
   await connectDB();
 
-  const job = await OsmSearchJob.findById(jobId);
+  const job = await OsmSearchJob.findById(jobId).select(JOB_SELECT);
   if (!job) {
     throw new Error("Search job not found");
   }
@@ -177,14 +206,14 @@ export async function tickSearchJob(jobId) {
 
 export async function getSearchJob(jobId) {
   await connectDB();
-  const job = await OsmSearchJob.findById(jobId).lean();
+  const job = await OsmSearchJob.findById(jobId).select(JOB_SELECT).lean();
   if (!job) throw new Error("Search job not found");
   return job;
 }
 
 export async function cancelSearchJob(jobId) {
   await connectDB();
-  const job = await OsmSearchJob.findById(jobId);
+  const job = await OsmSearchJob.findById(jobId).select(JOB_SELECT);
   if (!job) throw new Error("Search job not found");
   if (job.status === "running") {
     job.status = "cancelled";
@@ -195,5 +224,6 @@ export async function cancelSearchJob(jobId) {
 
 export async function deleteSearchJob(jobId) {
   await connectDB();
+  await OsmSearchResult.deleteMany({ jobId });
   await OsmSearchJob.findByIdAndDelete(jobId);
 }

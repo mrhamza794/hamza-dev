@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       guard += 1;
     }
 
-    const data = jobToClient(current);
+    const data = await jobToClient(current);
     return sendJson(res, 200, { success: true, data });
   } catch (error) {
     console.error("OSM search error:", error);

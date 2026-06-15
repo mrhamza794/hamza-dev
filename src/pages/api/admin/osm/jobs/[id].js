@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const job = await getSearchJob(id);
-      return sendJson(res, 200, { success: true, data: jobToClient(job) });
+      return sendJson(res, 200, { success: true, data: await jobToClient(job) });
     }
 
     if (req.method === "POST") {
@@ -26,11 +26,11 @@ export default async function handler(req, res) {
 
       if (action === "cancel") {
         const job = await cancelSearchJob(id);
-        return sendJson(res, 200, { success: true, data: jobToClient(job.toObject()) });
+        return sendJson(res, 200, { success: true, data: await jobToClient(job.toObject()) });
       }
 
       const job = await tickSearchJob(id);
-      return sendJson(res, 200, { success: true, data: jobToClient(job.toObject()) });
+      return sendJson(res, 200, { success: true, data: await jobToClient(job.toObject()) });
     }
 
     return methodNotAllowed(res, ["GET", "POST"]);
