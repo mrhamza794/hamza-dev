@@ -1,7 +1,7 @@
 /** OSM tag filters for Overpass — value null = any value for that key */
 export const ALL_TYPES_ID = "all";
 
-/** One query per key — catches every tagged business on OSM (plumber, etc.) */
+/** One query per key — catches every tagged business on OSM */
 export const ALL_MODE_CATCHALLS = [
   { key: "craft", value: null },
   { key: "shop", value: null },
@@ -12,6 +12,12 @@ export const ALL_MODE_CATCHALLS = [
   { key: "tourism", value: null },
   { key: "leisure", value: null },
   { key: "industrial", value: null },
+  { key: "company", value: null },
+  { key: "landuse", value: "commercial" },
+  { key: "landuse", value: "retail" },
+  { key: "building", value: "commercial" },
+  { key: "building", value: "retail" },
+  { key: "building", value: "office" },
 ];
 
 function tag(key, value) {
@@ -402,7 +408,7 @@ export const BUSINESS_TYPES = [
 
 export function getBusinessTypeById(id) {
   if (id === ALL_TYPES_ID) {
-    return { id: ALL_TYPES_ID, label: "All business types", filters: null };
+    return { id: ALL_TYPES_ID, label: "All business types (full city scan)", filters: null };
   }
   return BUSINESS_TYPES.find((t) => t.id === id) || null;
 }

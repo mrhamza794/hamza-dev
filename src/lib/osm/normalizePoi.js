@@ -46,6 +46,15 @@ function inferCategoryFromTags(tags = {}) {
   if (tags.industrial) {
     return { id: tags.industrial, label: formatOsmTagLabel(tags.industrial) };
   }
+  if (tags.company) {
+    return { id: "company", label: tags.company || "Company" };
+  }
+  if (tags.landuse) {
+    return { id: tags.landuse, label: formatOsmTagLabel(tags.landuse) };
+  }
+  if (tags.building) {
+    return { id: tags.building, label: formatOsmTagLabel(tags.building) };
+  }
   return { id: null, label: null };
 }
 

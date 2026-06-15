@@ -13,6 +13,11 @@ const CITY_PLACE_TYPES = new Set([
   "municipality",
   "borough",
   "suburb",
+  "village",
+  "hamlet",
+  "locality",
+  "administrative",
+  "city_district",
 ]);
 
 export function getBboxSpans(bbox) {

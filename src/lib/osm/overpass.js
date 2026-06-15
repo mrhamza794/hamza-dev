@@ -39,7 +39,11 @@ function buildQuery(bbox, filterSets) {
   const queryTimeout = isWildcardFilterSet(filterSets) ? 90 : QUERY_TIMEOUT_SEC;
   const lines = filterSets.flatMap((filters) => {
     const tagClause = buildFilterClause(filters);
-    return [`  node${tagClause}${area};`, `  way${tagClause}${area};`];
+    return [
+      `  node${tagClause}${area};`,
+      `  way${tagClause}${area};`,
+      `  relation${tagClause}${area};`,
+    ];
   });
 
   return `

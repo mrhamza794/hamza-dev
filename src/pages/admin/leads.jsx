@@ -19,7 +19,7 @@ const TABS = ["Search", "Saved leads"];
 const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
 
 const BUSINESS_TYPE_OPTIONS = [
-  { value: ALL_TYPES_ID, label: "All business types (every OSM service)" },
+  { value: ALL_TYPES_ID, label: "All business types (full city scan)" },
   ...BUSINESS_TYPES.map((t) => ({ value: t.id, label: t.label })).sort((a, b) =>
     a.label.localeCompare(b.label)
   ),
@@ -156,9 +156,11 @@ export default function LeadsPage() {
           throw new Error(job.error || "Search failed");
         }
 
-        if (job.status === "complete" && job.filteredCount === 0 && job.rawCount === 0) {
+        if (job.status === "complete" && job.filteredCount === 0) {
           setSearchError(
-            "Search finished but Overpass returned no data. Try one business type, or try again in a minute."
+            job.rawCount > 0
+              ? "Search found businesses in this area but none have an email on OpenStreetMap."
+              : "Search finished with no businesses in this area. Try a different city or business type."
           );
         }
 
@@ -386,6 +388,10 @@ export default function LeadsPage() {
 
             <div className="relative">
               <label className="mb-2 block text-sm font-medium">City or town</label>
+              <p className="mb-2 text-xs admin-text-muted">
+                Choose the city to scan. All businesses, hospitals, shops, and offices in that area are
+                included — results only show places that have an email on OpenStreetMap.
+              </p>
               <input
                 type="text"
                 value={cityQuery}
@@ -393,19 +399,19 @@ export default function LeadsPage() {
                   setCityQuery(e.target.value);
                   setSelectedPlace(null);
                 }}
-                placeholder="Type and pick from suggestions…"
+                placeholder="e.g. New York, Brooklyn, Lahore…"
                 className="admin-input w-full"
               />
               {selectedPlace && selectedPlace.searchArea && (
                 <p className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  Selected — full area ~{selectedPlace.searchArea.kmLat}×{selectedPlace.searchArea.kmLon} km
+                  {selectedPlace.shortLabel || selectedPlace.displayName} — scan area ~{selectedPlace.searchArea.kmLat}×{selectedPlace.searchArea.kmLon} km
                   {selectedPlace.searchArea.tileCount > 1 &&
                     ` · ${selectedPlace.searchArea.tileCount} tiles`}
                   {selectedPlace.searchArea.expandedFromPoint && " · expanded from city center"}
                 </p>
               )}
               {placeSuggestions.length > 0 && !selectedPlace && (
-                <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900">
+                <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900">
                   {placeSuggestions.map((p) => (
                     <li key={p.placeId}>
                       <button
@@ -413,11 +419,16 @@ export default function LeadsPage() {
                         className="w-full px-4 py-2.5 text-left text-sm hover:bg-purple-50 dark:hover:bg-purple-950/40"
                         onClick={() => {
                           setSelectedPlace(p);
-                          setCityQuery(p.displayName);
+                          setCityQuery(p.shortLabel || p.displayName);
                           setPlaceSuggestions([]);
                         }}
                       >
-                        {p.displayName}
+                        <span className="font-medium">{p.shortLabel || p.displayName}</span>
+                        {p.placeType && (
+                          <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-500 dark:bg-white/10">
+                            {p.placeType}
+                          </span>
+                        )}
                       </button>
                     </li>
                   ))}
@@ -482,9 +493,9 @@ export default function LeadsPage() {
             <div className="admin-card overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm admin-text-muted">
-                  {searchMeta.filteredCount} results
-                  {searchMeta.rawCount !== searchMeta.filteredCount &&
-                    ` (${searchMeta.rawCount} raw from OSM)`}{" "}
+                  {searchMeta.filteredCount} results with email
+                  {searchMeta.rawCount > searchMeta.filteredCount &&
+                    ` (${searchMeta.rawCount} from OSM, ${searchMeta.rawCount - searchMeta.filteredCount} without email)`}{" "}
                   · {searchMeta.businessType?.label}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -545,6 +556,7 @@ export default function LeadsPage() {
                         </button>
                       </th>
                       <th className="p-3 font-medium">Name</th>
+                      <th className="p-3 font-medium">Type</th>
                       <th className="p-3 font-medium">City</th>
                       <th className="p-3 font-medium">Address</th>
                       <th className="p-3 font-medium">Postcode</th>
@@ -571,6 +583,7 @@ export default function LeadsPage() {
                           </button>
                         </td>
                         <td className="p-3 font-medium">{lead.companyName}</td>
+                        <td className="p-3 admin-text-muted">{lead.categoryLabel || lead.category || "—"}</td>
                         <td className="p-3 admin-text-muted">{lead.city || "—"}</td>
                         <td className="p-3 admin-text-muted max-w-[180px] truncate">{lead.address || "—"}</td>
                         <td className="p-3 admin-text-muted">{lead.postalCode || "—"}</td>
