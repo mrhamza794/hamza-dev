@@ -73,11 +73,11 @@ export default function LeadsPage() {
         const params = new URLSearchParams({ q: cityQuery, country: countryCode });
         const res = await fetch(`/api/admin/osm/places?${params}`, { credentials: "include" });
         const data = await res.json();
-        if (data.success) setPlaceSuggestions(data.data);
+        if (data.success) setPlaceSuggestions(data.data || []);
       } catch {
         setPlaceSuggestions([]);
       }
-    }, 400);
+    }, 500);
 
     return () => clearTimeout(suggestTimer.current);
   }, [cityQuery, countryCode, selectedPlace?.displayName]);
@@ -408,6 +408,11 @@ export default function LeadsPage() {
                   {selectedPlace.searchArea.tileCount > 1 &&
                     ` · ${selectedPlace.searchArea.tileCount} tiles`}
                   {selectedPlace.searchArea.expandedFromPoint && " · expanded from city center"}
+                </p>
+              )}
+              {placeSuggestions.length === 0 && cityQuery.length >= 2 && !selectedPlace && (
+                <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                  No cities found — check the country is correct, or try the English spelling.
                 </p>
               )}
               {placeSuggestions.length > 0 && !selectedPlace && (
