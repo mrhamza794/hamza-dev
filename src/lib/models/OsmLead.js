@@ -26,10 +26,11 @@ const OsmLeadSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["new", "contacted", "skipped"],
+      enum: ["new", "emailed", "skipped", "completed"],
       default: "new",
     },
     notes: { type: String, default: "" },
+    emailKey: { type: String, default: null, lowercase: true, trim: true },
     searchMeta: {
       queryPlace: { type: String, default: null },
       businessTypeId: { type: String, default: null },
@@ -40,6 +41,7 @@ const OsmLeadSchema = new mongoose.Schema(
 );
 
 OsmLeadSchema.index({ osmType: 1, osmId: 1 }, { unique: true });
+OsmLeadSchema.index({ emailKey: 1 }, { unique: true, sparse: true });
 OsmLeadSchema.index({ city: 1, status: 1, createdAt: -1 });
 OsmLeadSchema.index({ countryCode: 1, category: 1 });
 

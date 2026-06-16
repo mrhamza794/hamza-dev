@@ -8,15 +8,48 @@ function buildListFilter(query) {
   if (query.city) filter.city = query.city;
   if (query.countryCode) filter.countryCode = query.countryCode.toUpperCase();
   if (query.category) filter.category = query.category;
-  if (query.status) filter.status = query.status;
+  if (query.status) {
+    filter.status =
+      query.status === "emailed" ? { $in: ["emailed", "contacted"] } : query.status;
+  }
   if (query.q) {
     filter.companyName = { $regex: query.q, $options: "i" };
+  }
+  if (query.hasWebsite === "yes") {
+    filter.website = { $exists: true, $nin: [null, ""] };
+  } else if (query.hasWebsite === "no") {
+    filter.$or = [{ website: null }, { website: "" }, { website: { $exists: false } }];
   }
   return filter;
 }
 
+function normalizeEmailKey(email) {
+  return email?.trim().toLowerCase() || null;
+}
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function findExistingLead(lead, emailKey) {
+  return OsmLead.findOne({
+    $or: [
+      { osmType: lead.osmType, osmId: lead.osmId },
+      { emailKey },
+      { email: { $regex: new RegExp(`^${escapeRegex(emailKey)}$`, "i") } },
+    ],
+  })
+    .select("_id")
+    .lean();
+}
+
 async function handleGet(req, res) {
   await connectDB();
+
+  if (!global._osmLeadStatusMigrated) {
+    await OsmLead.updateMany({ status: "contacted" }, { $set: { status: "emailed" } });
+    global._osmLeadStatusMigrated = true;
+  }
 
   const page = Math.max(parseInt(req.query.page || "1", 10), 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit || "50", 10), 1), 100);
@@ -33,10 +66,15 @@ async function handleGet(req, res) {
     OsmLead.countDocuments(filter),
   ]);
 
+  const normalizedItems = items.map((lead) => ({
+    ...lead,
+    status: lead.status === "contacted" ? "emailed" : lead.status,
+  }));
+
   return sendJson(res, 200, {
     success: true,
     data: {
-      items,
+      items: normalizedItems,
       total,
       page,
       limit,
@@ -60,59 +98,88 @@ async function handlePost(req, res) {
   }
 
   let saved = 0;
-  let skipped = 0;
+  let duplicates = 0;
+  let invalid = 0;
+
+  const seenOsm = new Set();
+  const seenEmail = new Set();
 
   for (const lead of leads) {
     if (!lead.osmType || lead.osmId == null || !lead.companyName) {
-      skipped += 1;
+      invalid += 1;
       continue;
     }
 
-    if (!lead.email?.trim()) {
-      skipped += 1;
+    const emailKey = normalizeEmailKey(lead.email);
+    if (!emailKey) {
+      invalid += 1;
       continue;
     }
 
-    await OsmLead.findOneAndUpdate(
-      { osmType: lead.osmType, osmId: lead.osmId },
-      {
-        $set: {
-          companyName: lead.companyName,
-          city: lead.city || null,
-          address: lead.address || null,
-          postalCode: lead.postalCode || null,
-          description: lead.description || null,
-          phone: lead.phone || null,
-          website: lead.website || null,
-          email: lead.email || null,
-          category: lead.category || null,
-          categoryLabel: lead.categoryLabel || null,
-          country: lead.country || null,
-          countryCode: lead.countryCode || null,
-          region: lead.region || null,
-          latitude: lead.latitude ?? null,
-          longitude: lead.longitude ?? null,
-          leadType: lead.leadType || (lead.website ? "has_website" : "no_website"),
-          searchMeta: {
-            queryPlace: searchMeta.queryPlace || lead.searchMeta?.queryPlace || null,
-            businessTypeId: searchMeta.businessTypeId || lead.category || null,
-            radiusKm: searchMeta.radiusKm ?? null,
-          },
+    const osmKey = `${lead.osmType}-${lead.osmId}`;
+    if (seenOsm.has(osmKey) || seenEmail.has(emailKey)) {
+      duplicates += 1;
+      continue;
+    }
+
+    const existing = await findExistingLead(lead, emailKey);
+
+    if (existing) {
+      duplicates += 1;
+      continue;
+    }
+
+    try {
+      await OsmLead.create({
+        osmType: lead.osmType,
+        osmId: lead.osmId,
+        companyName: lead.companyName,
+        city: lead.city || null,
+        address: lead.address || null,
+        postalCode: lead.postalCode || null,
+        description: lead.description || null,
+        phone: lead.phone || null,
+        website: lead.website || null,
+        email: lead.email.trim(),
+        emailKey,
+        category: lead.category || null,
+        categoryLabel: lead.categoryLabel || null,
+        country: lead.country || null,
+        countryCode: lead.countryCode || null,
+        region: lead.region || null,
+        latitude: lead.latitude ?? null,
+        longitude: lead.longitude ?? null,
+        leadType: lead.leadType || (lead.website ? "has_website" : "no_website"),
+        status: "new",
+        notes: "",
+        searchMeta: {
+          queryPlace: searchMeta.queryPlace || null,
+          businessTypeId: searchMeta.businessTypeId || lead.category || null,
+          radiusKm: searchMeta.radiusKm ?? null,
         },
-        $setOnInsert: {
-          status: "new",
-          notes: "",
-        },
-      },
-      { upsert: true, new: true }
-    );
-    saved += 1;
+      });
+
+      seenOsm.add(osmKey);
+      seenEmail.add(emailKey);
+      saved += 1;
+    } catch (err) {
+      if (err.code === 11000) {
+        duplicates += 1;
+      } else {
+        throw err;
+      }
+    }
   }
+
+  const parts = [];
+  if (saved) parts.push(`${saved} new`);
+  if (duplicates) parts.push(`${duplicates} duplicate(s) skipped`);
+  if (invalid) parts.push(`${invalid} invalid skipped`);
 
   return sendJson(res, 201, {
     success: true,
-    message: `Saved ${saved} lead(s)${skipped ? `, skipped ${skipped}` : ""}`,
-    data: { saved, skipped },
+    message: parts.length ? parts.join(", ") : "Nothing to save",
+    data: { saved, duplicates, invalid },
   });
 }
 

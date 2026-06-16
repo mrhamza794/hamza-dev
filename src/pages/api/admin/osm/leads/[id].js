@@ -15,13 +15,17 @@ export default async function handler(req, res) {
     const body = await readJsonBody(req);
     const update = {};
 
-    if (body.email !== undefined) update.email = body.email || null;
+    if (body.email !== undefined) {
+      update.email = body.email || null;
+      update.emailKey = body.email ? body.email.trim().toLowerCase() : null;
+    }
     if (body.notes !== undefined) update.notes = body.notes;
     if (body.status !== undefined) {
-      if (!["new", "contacted", "skipped"].includes(body.status)) {
+      const status = body.status === "contacted" ? "emailed" : body.status;
+      if (!["new", "emailed", "skipped", "completed"].includes(status)) {
         return sendJson(res, 400, { success: false, error: "Invalid status" });
       }
-      update.status = body.status;
+      update.status = status;
     }
 
     const lead = await OsmLead.findByIdAndUpdate(id, { $set: update }, { new: true }).lean();

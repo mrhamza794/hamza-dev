@@ -9,6 +9,8 @@ import {
   CheckSquare,
   Square,
   Trash2,
+  Mail,
+  X,
 } from "lucide-react";
 import { COUNTRIES } from "@/lib/osm/countries";
 import { ALL_TYPES_ID, BUSINESS_TYPES } from "@/lib/osm/businessTypes";
@@ -50,9 +52,14 @@ export default function LeadsPage() {
   const [savedData, setSavedData] = useState(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedPage, setSavedPage] = useState(1);
-  const [savedFilter, setSavedFilter] = useState({ status: "" });
+  const [savedFilter, setSavedFilter] = useState({ status: "", hasWebsite: "" });
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [savedSelectedIds, setSavedSelectedIds] = useState(new Set());
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
 
   const suggestTimer = useRef(null);
   const searchAbortRef = useRef(false);
@@ -199,6 +206,7 @@ export default function LeadsPage() {
         limit: "50",
         sortBy: "companyName",
         ...(savedFilter.status && { status: savedFilter.status }),
+        ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
       });
       const res = await fetch(`/api/admin/osm/leads?${params}`, { credentials: "include" });
       const data = await res.json();
@@ -213,6 +221,66 @@ export default function LeadsPage() {
   useEffect(() => {
     if (activeTab === "Saved leads") fetchSaved();
   }, [activeTab, fetchSaved]);
+
+  useEffect(() => {
+    setSavedSelectedIds(new Set());
+  }, [savedPage, savedFilter]);
+
+  const toggleSavedSelect = (id) => {
+    setSavedSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSavedSelectAll = () => {
+    const pageIds = (savedData?.items || []).map((l) => l._id);
+    if (!pageIds.length) return;
+    const allSelected = pageIds.every((id) => savedSelectedIds.has(id));
+    if (allSelected) {
+      setSavedSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSavedSelectedIds((prev) => new Set([...prev, ...pageIds]));
+    }
+  };
+
+  const sendEmailsToSelected = async () => {
+    if (!savedSelectedIds.size || emailSending) return;
+    setEmailSending(true);
+    setSavedMsg("");
+    try {
+      const res = await fetch("/api/admin/osm/leads/send", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadIds: [...savedSelectedIds],
+          subject: emailSubject,
+          message: emailMessage,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success && !data.data?.sent) {
+        throw new Error(data.error || data.message || "Send failed");
+      }
+      setSavedMsg(data.message || "Emails sent");
+      setEmailModalOpen(false);
+      setEmailSubject("");
+      setEmailMessage("");
+      setSavedSelectedIds(new Set());
+      fetchSaved();
+    } catch (err) {
+      setSavedMsg(err instanceof Error ? err.message : "Send failed");
+    } finally {
+      setEmailSending(false);
+    }
+  };
 
   const toggleSelect = (lead) => {
     const key = leadKey(lead);
@@ -302,9 +370,9 @@ export default function LeadsPage() {
     if (total === 0) return;
 
     const label =
-      savedFilter.status === ""
+      !savedFilter.status && !savedFilter.hasWebsite
         ? `all ${total} saved lead(s)`
-        : `${total} lead(s) with status "${savedFilter.status}"`;
+        : `${total} filtered lead(s)`;
 
     if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
 
@@ -312,10 +380,12 @@ export default function LeadsPage() {
     setSavedMsg("");
     try {
       const params = new URLSearchParams();
-      if (savedFilter.status === "") {
+      const hasFilters = savedFilter.status || savedFilter.hasWebsite;
+      if (!hasFilters) {
         params.set("all", "1");
       } else {
-        params.set("status", savedFilter.status);
+        if (savedFilter.status) params.set("status", savedFilter.status);
+        if (savedFilter.hasWebsite) params.set("hasWebsite", savedFilter.hasWebsite);
       }
 
       const res = await fetch(`/api/admin/osm/leads?${params}`, {
@@ -641,18 +711,43 @@ export default function LeadsPage() {
             <select
               value={savedFilter.status}
               onChange={(e) => {
-                setSavedFilter({ status: e.target.value });
+                setSavedFilter((prev) => ({ ...prev, status: e.target.value }));
                 setSavedPage(1);
               }}
-              className="admin-input"
+              className="admin-input min-w-[10.5rem]"
             >
               <option value="">All statuses</option>
               <option value="new">New</option>
-              <option value="contacted">Contacted</option>
+              <option value="emailed">Emailed</option>
               <option value="skipped">Skipped</option>
+              <option value="completed">Completed</option>
             </select>
+            <select
+              value={savedFilter.hasWebsite}
+              onChange={(e) => {
+                setSavedFilter((prev) => ({ ...prev, hasWebsite: e.target.value }));
+                setSavedPage(1);
+              }}
+              className="admin-input min-w-[10.5rem]"
+            >
+              <option value="">All websites</option>
+              <option value="yes">Has website</option>
+              <option value="no">No website</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setEmailModalOpen(true)}
+              disabled={savedSelectedIds.size === 0}
+              className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+            >
+              <Mail size={14} />
+              Email selected ({savedSelectedIds.size})
+            </button>
             <a
-              href="/api/admin/osm/export"
+              href={`/api/admin/osm/export?${new URLSearchParams({
+                ...(savedFilter.status && { status: savedFilter.status }),
+                ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
+              }).toString()}`}
               className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/10"
             >
               <Download size={14} /> Export CSV
@@ -674,10 +769,78 @@ export default function LeadsPage() {
 
           {savedMsg && (
             <p
-              className={`text-sm ${savedMsg.includes("Deleted") ? "text-green-600" : "text-red-500"}`}
+              className={`text-sm ${
+                savedMsg.includes("Deleted") ||
+                savedMsg.includes("Sent") ||
+                savedMsg.includes("new")
+                  ? "text-green-600"
+                  : "text-red-500"
+              }`}
             >
               {savedMsg}
             </p>
+          )}
+
+          {emailModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="admin-card w-full max-w-lg space-y-4 p-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">
+                    Email {savedSelectedIds.size} lead{savedSelectedIds.size === 1 ? "" : "s"}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalOpen(false)}
+                    className="text-slate-400 hover:text-slate-600"
+                    aria-label="Close"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <p className="text-xs admin-text-muted">
+                  Use {"{{companyName}}"} in subject or message to personalize each email. Sent leads
+                  are marked as emailed.
+                </p>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Subject</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Partnership opportunity for {{companyName}}"
+                    className="admin-input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Message</label>
+                  <textarea
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={8}
+                    placeholder="I came across {{companyName}} and would love to connect about..."
+                    className="admin-input w-full resize-y"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalOpen(false)}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm dark:border-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendEmailsToSelected}
+                    disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()}
+                    className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {emailSending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                    Send emails
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {savedLoading && !savedData ? (
@@ -689,6 +852,16 @@ export default function LeadsPage() {
               <table className="w-full min-w-[1200px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-white/10">
+                    <th className="p-3">
+                      <button type="button" onClick={toggleSavedSelectAll} className="text-slate-400">
+                        {savedData?.items?.length &&
+                        savedData.items.every((l) => savedSelectedIds.has(l._id)) ? (
+                          <CheckSquare size={16} />
+                        ) : (
+                          <Square size={16} />
+                        )}
+                      </button>
+                    </th>
                     <th className="p-3">Name</th>
                     <th className="p-3">City</th>
                     <th className="p-3">Address</th>
@@ -696,7 +869,7 @@ export default function LeadsPage() {
                     <th className="p-3">Phone</th>
                     <th className="p-3 min-w-[200px]">Email</th>
                     <th className="p-3">Website</th>
-                    <th className="p-3">Status</th>
+                    <th className="p-3 min-w-[10.5rem]">Status</th>
                     <th className="p-3">Notes</th>
                     <th className="p-3"></th>
                   </tr>
@@ -704,6 +877,15 @@ export default function LeadsPage() {
                 <tbody>
                   {savedData?.items?.map((lead) => (
                     <tr key={lead._id} className="border-b border-slate-100 dark:border-white/5">
+                      <td className="p-3">
+                        <button type="button" onClick={() => toggleSavedSelect(lead._id)}>
+                          {savedSelectedIds.has(lead._id) ? (
+                            <CheckSquare size={16} className="text-purple-500" />
+                          ) : (
+                            <Square size={16} className="text-slate-400" />
+                          )}
+                        </button>
+                      </td>
                       <td className="p-3">
                         <div className="font-medium">{lead.companyName}</div>
                         <div className="text-xs admin-text-muted">{lead.categoryLabel}</div>
@@ -714,15 +896,16 @@ export default function LeadsPage() {
                       <td className="p-3">{lead.phone || "—"}</td>
                       <td className="p-3 text-purple-600 dark:text-purple-400">{lead.email || "—"}</td>
                       <td className="p-3 admin-text-muted text-xs">{lead.website || "—"}</td>
-                      <td className="p-3">
+                      <td className="p-3 min-w-[10.5rem]">
                         <select
-                          value={lead.status}
+                          value={lead.status === "contacted" ? "emailed" : lead.status}
                           onChange={(e) => updateLead(lead._id, { status: e.target.value })}
-                          className="admin-input text-xs"
+                          className="admin-input min-w-[10.5rem] text-sm"
                         >
                           <option value="new">New</option>
-                          <option value="contacted">Contacted</option>
+                          <option value="emailed">Emailed</option>
                           <option value="skipped">Skipped</option>
+                          <option value="completed">Completed</option>
                         </select>
                       </td>
                       <td className="p-3">

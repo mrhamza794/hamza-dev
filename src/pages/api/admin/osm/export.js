@@ -17,7 +17,15 @@ export default async function handler(req, res) {
   await connectDB();
 
   const filter = { email: { $nin: [null, ""] } };
-  if (req.query.status) filter.status = req.query.status;
+  if (req.query.status) {
+    filter.status =
+      req.query.status === "emailed" ? { $in: ["emailed", "contacted"] } : req.query.status;
+  }
+  if (req.query.hasWebsite === "yes") {
+    filter.website = { $exists: true, $nin: [null, ""] };
+  } else if (req.query.hasWebsite === "no") {
+    filter.$or = [{ website: null }, { website: "" }, { website: { $exists: false } }];
+  }
 
   const leads = await OsmLead.find(filter).sort({ companyName: 1 }).limit(1000).lean();
 
