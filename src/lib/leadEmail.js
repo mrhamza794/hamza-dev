@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { personalizeEmailText } from "@/lib/leadEmailTemplates";
 
 function escapeHtml(s) {
   return String(s)
@@ -8,15 +9,9 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
-function personalize(text, { companyName }) {
-  return String(text)
-    .replace(/\{\{companyName\}\}/gi, companyName || "there")
-    .replace(/\{\{name\}\}/gi, companyName || "there");
-}
-
 function buildOutreachHtml({ companyName, message, senderName }) {
   const safeCompany = escapeHtml(companyName);
-  const safeMessage = escapeHtml(personalize(message, { companyName })).replace(/\n/g, "<br/>");
+  const safeMessage = escapeHtml(personalizeEmailText(message, companyName)).replace(/\n/g, "<br/>");
   const safeSender = escapeHtml(senderName);
 
   return `<!doctype html>
@@ -69,7 +64,7 @@ export async function sendLeadOutreachEmail({ to, companyName, subject, message 
   const safeSubject = subject.trim().slice(0, 200);
   const safeMessage = message.trim().slice(0, 10000);
   const senderName = process.env.LEAD_EMAIL_SENDER_NAME?.trim() || "Hamza Choudhary";
-  const personalized = personalize(safeMessage, { companyName });
+  const personalized = personalizeEmailText(safeMessage, companyName);
   const html = buildOutreachHtml({ companyName, message: safeMessage, senderName });
 
   try {
@@ -77,7 +72,7 @@ export async function sendLeadOutreachEmail({ to, companyName, subject, message 
       from: `"${senderName}" <${from}>`,
       to: safeTo,
       replyTo: from,
-      subject: personalize(safeSubject, { companyName }),
+      subject: personalizeEmailText(safeSubject, companyName),
       text: `Hi ${companyName},\n\n${personalized}\n\nBest regards,\n${senderName}`,
       html,
     });
@@ -87,5 +82,3 @@ export async function sendLeadOutreachEmail({ to, companyName, subject, message 
     return { ok: false, error: err.message || "Could not send email." };
   }
 }
-
-export { personalize };

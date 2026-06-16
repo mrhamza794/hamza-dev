@@ -14,6 +14,14 @@ import {
 } from "lucide-react";
 import { COUNTRIES } from "@/lib/osm/countries";
 import { ALL_TYPES_ID, BUSINESS_TYPES } from "@/lib/osm/businessTypes";
+import {
+  DEFAULT_LEAD_EMAIL_TEMPLATES,
+  EMAIL_TEMPLATE_TYPES,
+  getDefaultEmailTemplates,
+  leadHasWebsite,
+  personalizeEmailText,
+  prepareTemplatesForModal,
+} from "@/lib/leadEmailTemplates";
 import SearchableSelect from "@/components/admin/SearchableSelect";
 
 const TABS = ["Search", "Saved leads"];
@@ -57,8 +65,10 @@ export default function LeadsPage() {
   const [savedMsg, setSavedMsg] = useState("");
   const [savedSelectedIds, setSavedSelectedIds] = useState(new Set());
   const [emailModalOpen, setEmailModalOpen] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("");
-  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSendIds, setEmailSendIds] = useState([]);
+  const [emailPreviewLeads, setEmailPreviewLeads] = useState([]);
+  const [emailTemplateTab, setEmailTemplateTab] = useState(EMAIL_TEMPLATE_TYPES.NO_WEBSITE);
+  const [emailTemplates, setEmailTemplates] = useState(getDefaultEmailTemplates);
   const [emailSending, setEmailSending] = useState(false);
 
   const suggestTimer = useRef(null);
@@ -250,8 +260,77 @@ export default function LeadsPage() {
     }
   };
 
+  const openEmailModal = (leadsOrIds = null) => {
+    let ids = [];
+    let previewLeads = [];
+
+    if (Array.isArray(leadsOrIds)) {
+      if (leadsOrIds.length && leadsOrIds[0]?._id) {
+        previewLeads = leadsOrIds;
+        ids = leadsOrIds.map((l) => l._id);
+      } else {
+        ids = leadsOrIds;
+        previewLeads = ids
+          .map((id) => savedData?.items?.find((l) => String(l._id) === String(id)))
+          .filter(Boolean);
+      }
+    } else if (leadsOrIds?._id) {
+      ids = [leadsOrIds._id];
+      previewLeads = [leadsOrIds];
+    } else {
+      ids = [...savedSelectedIds];
+      previewLeads = ids
+        .map((id) => savedData?.items?.find((l) => String(l._id) === String(id)))
+        .filter(Boolean);
+    }
+
+    if (!ids.length) return;
+
+    setEmailSendIds(ids);
+    setEmailPreviewLeads(previewLeads);
+    setEmailTemplates(prepareTemplatesForModal(getDefaultEmailTemplates(), previewLeads));
+
+    const firstLead = previewLeads[0] || null;
+    setEmailTemplateTab(
+      firstLead && leadHasWebsite(firstLead)
+        ? EMAIL_TEMPLATE_TYPES.HAS_WEBSITE
+        : EMAIL_TEMPLATE_TYPES.NO_WEBSITE
+    );
+    setEmailModalOpen(true);
+  };
+
+  const closeEmailModal = () => {
+    setEmailModalOpen(false);
+    setEmailSendIds([]);
+    setEmailPreviewLeads([]);
+  };
+
+  const updateActiveTemplate = (field, value) => {
+    setEmailTemplates((prev) => ({
+      ...prev,
+      [emailTemplateTab]: {
+        ...prev[emailTemplateTab],
+        [field]: value,
+      },
+    }));
+  };
+
+  const resetActiveTemplate = () => {
+    const defaults = getDefaultEmailTemplates();
+    const fresh = prepareTemplatesForModal(defaults, emailPreviewLeads);
+    setEmailTemplates((prev) => ({
+      ...prev,
+      [emailTemplateTab]: fresh[emailTemplateTab],
+    }));
+  };
+
+  const activeTemplate = emailTemplates[emailTemplateTab];
+  const previewLead = emailPreviewLeads[0] || null;
+  const previewName = previewLead?.companyName?.trim() || null;
+  const isSingleLeadEmail = emailSendIds.length === 1 && Boolean(previewName);
+
   const sendEmailsToSelected = async () => {
-    if (!savedSelectedIds.size || emailSending) return;
+    if (!emailSendIds.length || emailSending) return;
     setEmailSending(true);
     setSavedMsg("");
     try {
@@ -260,9 +339,17 @@ export default function LeadsPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          leadIds: [...savedSelectedIds],
-          subject: emailSubject,
-          message: emailMessage,
+          leadIds: emailSendIds,
+          templates: {
+            noWebsite: {
+              subject: emailTemplates.noWebsite.subject,
+              message: emailTemplates.noWebsite.message,
+            },
+            hasWebsite: {
+              subject: emailTemplates.hasWebsite.subject,
+              message: emailTemplates.hasWebsite.message,
+            },
+          },
         }),
       });
       const data = await res.json();
@@ -270,9 +357,7 @@ export default function LeadsPage() {
         throw new Error(data.error || data.message || "Send failed");
       }
       setSavedMsg(data.message || "Emails sent");
-      setEmailModalOpen(false);
-      setEmailSubject("");
-      setEmailMessage("");
+      closeEmailModal();
       setSavedSelectedIds(new Set());
       fetchSaved();
     } catch (err) {
@@ -707,64 +792,71 @@ export default function LeadsPage() {
 
       {activeTab === "Saved leads" && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <select
-              value={savedFilter.status}
-              onChange={(e) => {
-                setSavedFilter((prev) => ({ ...prev, status: e.target.value }));
-                setSavedPage(1);
-              }}
-              className="admin-input min-w-[10.5rem]"
-            >
-              <option value="">All statuses</option>
-              <option value="new">New</option>
-              <option value="emailed">Emailed</option>
-              <option value="skipped">Skipped</option>
-              <option value="completed">Completed</option>
-            </select>
-            <select
-              value={savedFilter.hasWebsite}
-              onChange={(e) => {
-                setSavedFilter((prev) => ({ ...prev, hasWebsite: e.target.value }));
-                setSavedPage(1);
-              }}
-              className="admin-input min-w-[10.5rem]"
-            >
-              <option value="">All websites</option>
-              <option value="yes">Has website</option>
-              <option value="no">No website</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => setEmailModalOpen(true)}
-              disabled={savedSelectedIds.size === 0}
-              className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-            >
-              <Mail size={14} />
-              Email selected ({savedSelectedIds.size})
-            </button>
-            <a
-              href={`/api/admin/osm/export?${new URLSearchParams({
-                ...(savedFilter.status && { status: savedFilter.status }),
-                ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
-              }).toString()}`}
-              className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/10"
-            >
-              <Download size={14} /> Export CSV
-            </a>
-            <button
-              type="button"
-              onClick={deleteAllSavedLeads}
-              disabled={deleteAllLoading || !savedData?.total}
-              className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
-            >
-              {deleteAllLoading ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Trash2 size={14} />
-              )}
-              Delete all{savedData?.total ? ` (${savedData.total})` : ""}
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openEmailModal()}
+                disabled={savedSelectedIds.size === 0}
+                className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+              >
+                <Mail size={14} />
+                Email selected ({savedSelectedIds.size})
+              </button>
+              <a
+                href={`/api/admin/osm/export?${new URLSearchParams({
+                  ...(savedFilter.status && { status: savedFilter.status }),
+                  ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
+                }).toString()}`}
+                className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/10"
+              >
+                <Download size={14} /> Export CSV
+              </a>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={savedFilter.status}
+                onChange={(e) => {
+                  setSavedFilter((prev) => ({ ...prev, status: e.target.value }));
+                  setSavedPage(1);
+                }}
+                className="admin-input w-27 shrink-0 px-2 py-2 text-sm"
+                title="Filter by status"
+              >
+                <option value="">Status</option>
+                <option value="new">New</option>
+                <option value="emailed">Emailed</option>
+                <option value="skipped">Skipped</option>
+                <option value="completed">Done</option>
+              </select>
+              <select
+                value={savedFilter.hasWebsite}
+                onChange={(e) => {
+                  setSavedFilter((prev) => ({ ...prev, hasWebsite: e.target.value }));
+                  setSavedPage(1);
+                }}
+                className="admin-input w-27 shrink-0 px-2 py-2 text-sm"
+                title="Filter by website"
+              >
+                <option value="">Website</option>
+                <option value="yes">Has</option>
+                <option value="no">No</option>
+              </select>
+              <button
+                type="button"
+                onClick={deleteAllSavedLeads}
+                disabled={deleteAllLoading || !savedData?.total}
+                className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
+              >
+                {deleteAllLoading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                Delete all{savedData?.total ? ` (${savedData.total})` : ""}
+              </button>
+            </div>
           </div>
 
           {savedMsg && (
@@ -783,48 +875,124 @@ export default function LeadsPage() {
 
           {emailModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="admin-card w-full max-w-lg space-y-4 p-6">
+              <div className="admin-card max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">
-                    Email {savedSelectedIds.size} lead{savedSelectedIds.size === 1 ? "" : "s"}
+                    Email {emailSendIds.length} lead{emailSendIds.length === 1 ? "" : "s"}
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setEmailModalOpen(false)}
+                    onClick={closeEmailModal}
                     className="text-slate-400 hover:text-slate-600"
                     aria-label="Close"
                   >
                     <X size={20} />
                   </button>
                 </div>
+
                 <p className="text-xs admin-text-muted">
-                  Use {"{{companyName}}"} in subject or message to personalize each email. Sent leads
-                  are marked as emailed.
+                  {isSingleLeadEmail ? (
+                    <>
+                      Emailing <strong>{previewName}</strong> — their name is filled in below. You can
+                      edit before sending.
+                    </>
+                  ) : (
+                    <>
+                      Two templates are used automatically: leads <strong>without</strong> a website get
+                      the no-website proposal; leads <strong>with</strong> a website get the enhancement
+                      proposal. Use {"{{companyName}}"} in subject or message for bulk sends.
+                    </>
+                  )}
                 </p>
+
+                <div className="flex rounded-xl border border-slate-200 p-1 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplateTab(EMAIL_TEMPLATE_TYPES.NO_WEBSITE)}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      emailTemplateTab === EMAIL_TEMPLATE_TYPES.NO_WEBSITE
+                        ? "bg-purple-600 text-white shadow"
+                        : "admin-text-muted hover:bg-slate-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    No website
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailTemplateTab(EMAIL_TEMPLATE_TYPES.HAS_WEBSITE)}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      emailTemplateTab === EMAIL_TEMPLATE_TYPES.HAS_WEBSITE
+                        ? "bg-purple-600 text-white shadow"
+                        : "admin-text-muted hover:bg-slate-100 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    Has website
+                  </button>
+                </div>
+
+                <p className="text-xs admin-text-muted">
+                  {DEFAULT_LEAD_EMAIL_TEMPLATES[emailTemplateTab].description}
+                </p>
+
                 <div>
                   <label className="mb-1 block text-sm font-medium">Subject</label>
                   <input
                     type="text"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                    placeholder="Partnership opportunity for {{companyName}}"
+                    value={activeTemplate.subject}
+                    onChange={(e) => updateActiveTemplate("subject", e.target.value)}
                     className="admin-input w-full"
                   />
+                  {!isSingleLeadEmail && previewName && (
+                    <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                      Example: {personalizeEmailText(activeTemplate.subject, previewName)}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Message</label>
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <label className="block text-sm font-medium">Message</label>
+                    <button
+                      type="button"
+                      onClick={resetActiveTemplate}
+                      className="text-xs text-purple-600 hover:underline dark:text-purple-400"
+                    >
+                      Reset template
+                    </button>
+                  </div>
                   <textarea
-                    value={emailMessage}
-                    onChange={(e) => setEmailMessage(e.target.value)}
-                    rows={8}
-                    placeholder="I came across {{companyName}} and would love to connect about..."
-                    className="admin-input w-full resize-y"
+                    value={activeTemplate.message}
+                    onChange={(e) => updateActiveTemplate("message", e.target.value)}
+                    rows={14}
+                    className="admin-input w-full resize-y font-mono text-sm leading-relaxed"
                   />
                 </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide admin-text-muted">
+                    Preview{previewName ? ` — ${previewName}` : ""}
+                    {emailPreviewLeads.length > 1
+                      ? ` (+${emailPreviewLeads.length - 1} more)`
+                      : ""}
+                  </p>
+                  {previewName ? (
+                    <>
+                      <p className="font-medium">
+                        {personalizeEmailText(activeTemplate.subject, previewName)}
+                      </p>
+                      <p className="mt-3 whitespace-pre-wrap admin-text-muted">
+                        Hi {previewName},{"\n\n"}
+                        {personalizeEmailText(activeTemplate.message, previewName)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="admin-text-muted">Select at least one lead to preview.</p>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setEmailModalOpen(false)}
+                    onClick={closeEmailModal}
                     className="rounded-lg border border-slate-300 px-4 py-2 text-sm dark:border-white/10"
                   >
                     Cancel
@@ -832,11 +1000,17 @@ export default function LeadsPage() {
                   <button
                     type="button"
                     onClick={sendEmailsToSelected}
-                    disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()}
+                    disabled={
+                      emailSending ||
+                      !emailTemplates.noWebsite.subject.trim() ||
+                      !emailTemplates.noWebsite.message.trim() ||
+                      !emailTemplates.hasWebsite.subject.trim() ||
+                      !emailTemplates.hasWebsite.message.trim()
+                    }
                     className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                   >
                     {emailSending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                    Send emails
+                    Send with smart templates
                   </button>
                 </div>
               </div>
@@ -869,9 +1043,9 @@ export default function LeadsPage() {
                     <th className="p-3">Phone</th>
                     <th className="p-3 min-w-[200px]">Email</th>
                     <th className="p-3">Website</th>
-                    <th className="p-3 min-w-[10.5rem]">Status</th>
+                    <th className="p-3 w-28">Status</th>
                     <th className="p-3">Notes</th>
-                    <th className="p-3"></th>
+                    <th className="p-3 w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -896,11 +1070,11 @@ export default function LeadsPage() {
                       <td className="p-3">{lead.phone || "—"}</td>
                       <td className="p-3 text-purple-600 dark:text-purple-400">{lead.email || "—"}</td>
                       <td className="p-3 admin-text-muted text-xs">{lead.website || "—"}</td>
-                      <td className="p-3 min-w-[10.5rem]">
+                      <td className="p-3">
                         <select
                           value={lead.status === "contacted" ? "emailed" : lead.status}
                           onChange={(e) => updateLead(lead._id, { status: e.target.value })}
-                          className="admin-input min-w-[10.5rem] text-sm"
+                          className="admin-input w-27 px-2 py-1.5 text-sm"
                         >
                           <option value="new">New</option>
                           <option value="emailed">Emailed</option>
@@ -922,14 +1096,26 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="p-3">
-                        <button
-                          type="button"
-                          onClick={() => deleteLead(lead._id)}
-                          className="text-red-500 hover:text-red-600"
-                          aria-label="Delete lead"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEmailModal(lead)}
+                            disabled={!lead.email?.trim() || emailSending}
+                            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 disabled:opacity-40 dark:text-purple-400 dark:hover:bg-purple-950/40"
+                            title={lead.email ? "Send email" : "No email"}
+                            aria-label={`Email ${lead.companyName}`}
+                          >
+                            <Mail size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteLead(lead._id)}
+                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                            aria-label="Delete lead"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

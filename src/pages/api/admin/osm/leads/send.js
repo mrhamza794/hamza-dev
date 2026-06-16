@@ -2,12 +2,39 @@ import connectDB from "@/lib/mongodb";
 import OsmLead from "@/lib/models/OsmLead";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { sendLeadOutreachEmail } from "@/lib/leadEmail";
+import { pickTemplateForLead } from "@/lib/leadEmailTemplates";
 import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
 
 const MAX_PER_REQUEST = 25;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeTemplates(body) {
+  const noWebsite = body.templates?.noWebsite || {};
+  const hasWebsite = body.templates?.hasWebsite || {};
+
+  const templates = {
+    noWebsite: {
+      subject: String(noWebsite.subject || body.subject || "").trim(),
+      message: String(noWebsite.message || body.message || "").trim(),
+    },
+    hasWebsite: {
+      subject: String(hasWebsite.subject || body.subject || "").trim(),
+      message: String(hasWebsite.message || body.message || "").trim(),
+    },
+  };
+
+  if (!templates.noWebsite.subject || !templates.noWebsite.message) {
+    return { error: "No-website template subject and message are required." };
+  }
+
+  if (!templates.hasWebsite.subject || !templates.hasWebsite.message) {
+    return { error: "Has-website template subject and message are required." };
+  }
+
+  return { templates };
 }
 
 export default async function handler(req, res) {
@@ -18,8 +45,6 @@ export default async function handler(req, res) {
   try {
     const body = await readJsonBody(req);
     const leadIds = Array.isArray(body.leadIds) ? body.leadIds : [];
-    const subject = String(body.subject || "").trim();
-    const message = String(body.message || "").trim();
 
     if (!leadIds.length) {
       return sendJson(res, 400, { success: false, error: "Select at least one lead." });
@@ -32,12 +57,9 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!subject) {
-      return sendJson(res, 400, { success: false, error: "Subject is required." });
-    }
-
-    if (!message) {
-      return sendJson(res, 400, { success: false, error: "Message is required." });
+    const normalized = normalizeTemplates(body);
+    if (normalized.error) {
+      return sendJson(res, 400, { success: false, error: normalized.error });
     }
 
     await connectDB();
@@ -58,11 +80,13 @@ export default async function handler(req, res) {
         continue;
       }
 
+      const template = pickTemplateForLead(lead, normalized.templates);
+
       const result = await sendLeadOutreachEmail({
         to: lead.email,
         companyName: lead.companyName,
-        subject,
-        message,
+        subject: template.subject,
+        message: template.message,
       });
 
       if (result.ok) {
@@ -84,7 +108,7 @@ export default async function handler(req, res) {
       success: sent > 0,
       message:
         sent > 0
-          ? `Sent ${sent} email(s)${failed ? `, ${failed} failed` : ""}.`
+          ? `Sent ${sent} email(s) using the matching template per lead${failed ? `, ${failed} failed` : ""}.`
           : `No emails sent.${failed ? ` ${failed} failed.` : ""}`,
       data: { sent, failed, errors: errors.slice(0, 5) },
     });
