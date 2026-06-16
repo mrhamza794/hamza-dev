@@ -25,6 +25,7 @@ import {
 import SearchableSelect from "@/components/admin/SearchableSelect";
 
 const TABS = ["Search", "Saved leads"];
+const EMAIL_BATCH_SIZE = 25;
 
 const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
 
@@ -60,7 +61,9 @@ export default function LeadsPage() {
   const [savedData, setSavedData] = useState(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedPage, setSavedPage] = useState(1);
-  const [savedFilter, setSavedFilter] = useState({ status: "", hasWebsite: "" });
+  const [savedFilter, setSavedFilter] = useState({ status: "", hasWebsite: "", q: "" });
+  const [savedSearchDraft, setSavedSearchDraft] = useState("");
+  const savedSearchTimer = useRef(null);
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
   const [savedSelectedIds, setSavedSelectedIds] = useState(new Set());
@@ -70,12 +73,19 @@ export default function LeadsPage() {
   const [emailTemplateTab, setEmailTemplateTab] = useState(EMAIL_TEMPLATE_TYPES.NO_WEBSITE);
   const [emailTemplates, setEmailTemplates] = useState(getDefaultEmailTemplates);
   const [emailSending, setEmailSending] = useState(false);
+  const [emailSendProgress, setEmailSendProgress] = useState("");
 
   const suggestTimer = useRef(null);
   const searchAbortRef = useRef(false);
   const activeJobIdRef = useRef(null);
 
   const leadKey = (lead) => `${lead.osmType}-${lead.osmId}`;
+
+  const websiteHref = (url) => {
+    const trimmed = url?.trim();
+    if (!trimmed) return null;
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  };
 
   // City autocomplete
   useEffect(() => {
@@ -217,6 +227,7 @@ export default function LeadsPage() {
         sortBy: "companyName",
         ...(savedFilter.status && { status: savedFilter.status }),
         ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
+        ...(savedFilter.q && { q: savedFilter.q }),
       });
       const res = await fetch(`/api/admin/osm/leads?${params}`, { credentials: "include" });
       const data = await res.json();
@@ -332,38 +343,68 @@ export default function LeadsPage() {
   const sendEmailsToSelected = async () => {
     if (!emailSendIds.length || emailSending) return;
     setEmailSending(true);
+    setEmailSendProgress("");
     setSavedMsg("");
+
+    const batches = [];
+    for (let i = 0; i < emailSendIds.length; i += EMAIL_BATCH_SIZE) {
+      batches.push(emailSendIds.slice(i, i + EMAIL_BATCH_SIZE));
+    }
+
+    const payload = {
+      templates: {
+        noWebsite: {
+          subject: emailTemplates.noWebsite.subject,
+          message: emailTemplates.noWebsite.message,
+        },
+        hasWebsite: {
+          subject: emailTemplates.hasWebsite.subject,
+          message: emailTemplates.hasWebsite.message,
+        },
+      },
+    };
+
+    let totalSent = 0;
+    let totalFailed = 0;
+
     try {
-      const res = await fetch("/api/admin/osm/leads/send", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadIds: emailSendIds,
-          templates: {
-            noWebsite: {
-              subject: emailTemplates.noWebsite.subject,
-              message: emailTemplates.noWebsite.message,
-            },
-            hasWebsite: {
-              subject: emailTemplates.hasWebsite.subject,
-              message: emailTemplates.hasWebsite.message,
-            },
-          },
-        }),
-      });
-      const data = await res.json();
-      if (!data.success && !data.data?.sent) {
-        throw new Error(data.error || data.message || "Send failed");
+      for (let i = 0; i < batches.length; i += 1) {
+        if (batches.length > 1) {
+          setEmailSendProgress(`Sending batch ${i + 1} of ${batches.length} (${batches[i].length} leads)…`);
+        }
+
+        const res = await fetch("/api/admin/osm/leads/send", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leadIds: batches[i], ...payload }),
+        });
+        const data = await res.json();
+        if (!data.success && !data.data?.sent) {
+          throw new Error(data.error || data.message || "Send failed");
+        }
+
+        totalSent += data.data?.sent || 0;
+        totalFailed += data.data?.failed || 0;
       }
-      setSavedMsg(data.message || "Emails sent");
+
+      const batchNote = batches.length > 1 ? ` in ${batches.length} batches` : "";
+      const failNote = totalFailed ? `, ${totalFailed} failed` : "";
+      setSavedMsg(
+        totalSent > 0
+          ? `Sent ${totalSent} email(s)${failNote}${batchNote}.`
+          : `No emails sent.${totalFailed ? ` ${totalFailed} failed.` : ""}`
+      );
       closeEmailModal();
       setSavedSelectedIds(new Set());
       fetchSaved();
     } catch (err) {
-      setSavedMsg(err instanceof Error ? err.message : "Send failed");
+      const partial =
+        totalSent > 0 ? ` Sent ${totalSent} before the error.` : "";
+      setSavedMsg(`${err instanceof Error ? err.message : "Send failed"}${partial}`);
     } finally {
       setEmailSending(false);
+      setEmailSendProgress("");
     }
   };
 
@@ -455,7 +496,7 @@ export default function LeadsPage() {
     if (total === 0) return;
 
     const label =
-      !savedFilter.status && !savedFilter.hasWebsite
+      !savedFilter.status && !savedFilter.hasWebsite && !savedFilter.q
         ? `all ${total} saved lead(s)`
         : `${total} filtered lead(s)`;
 
@@ -465,12 +506,13 @@ export default function LeadsPage() {
     setSavedMsg("");
     try {
       const params = new URLSearchParams();
-      const hasFilters = savedFilter.status || savedFilter.hasWebsite;
+      const hasFilters = savedFilter.status || savedFilter.hasWebsite || savedFilter.q;
       if (!hasFilters) {
         params.set("all", "1");
       } else {
         if (savedFilter.status) params.set("status", savedFilter.status);
         if (savedFilter.hasWebsite) params.set("hasWebsite", savedFilter.hasWebsite);
+        if (savedFilter.q) params.set("q", savedFilter.q);
       }
 
       const res = await fetch(`/api/admin/osm/leads?${params}`, {
@@ -491,7 +533,7 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 max-w-full space-y-6 overflow-x-hidden">
       <div>
         <h1 className="admin-title text-2xl font-bold">OSM Leads</h1>
         <p className="admin-text-muted mt-1">
@@ -517,7 +559,7 @@ export default function LeadsPage() {
       </div>
 
       {activeTab === "Search" && (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className="admin-card space-y-5 p-6">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <SearchableSelect
@@ -650,7 +692,7 @@ export default function LeadsPage() {
           )}
 
           {searchMeta && allResults.length > 0 && (
-            <div className="admin-card overflow-hidden">
+            <div className="admin-card max-w-full overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm admin-text-muted">
                   {searchMeta.filteredCount} results with email
@@ -701,7 +743,7 @@ export default function LeadsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="max-w-full overflow-x-auto">
                 <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-white/10">
@@ -791,7 +833,7 @@ export default function LeadsPage() {
       )}
 
       {activeTab === "Saved leads" && (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -807,14 +849,12 @@ export default function LeadsPage() {
                 href={`/api/admin/osm/export?${new URLSearchParams({
                   ...(savedFilter.status && { status: savedFilter.status }),
                   ...(savedFilter.hasWebsite && { hasWebsite: savedFilter.hasWebsite }),
+                  ...(savedFilter.q && { q: savedFilter.q }),
                 }).toString()}`}
                 className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-white/10"
               >
                 <Download size={14} /> Export CSV
               </a>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={savedFilter.status}
                 onChange={(e) => {
@@ -856,6 +896,28 @@ export default function LeadsPage() {
                 )}
                 Delete all{savedData?.total ? ` (${savedData.total})` : ""}
               </button>
+            </div>
+
+            <div className="relative w-full sm:w-72">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 admin-text-muted"
+              />
+              <input
+                type="search"
+                value={savedSearchDraft}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSavedSearchDraft(value);
+                  clearTimeout(savedSearchTimer.current);
+                  savedSearchTimer.current = setTimeout(() => {
+                    setSavedFilter((prev) => ({ ...prev, q: value }));
+                    setSavedPage(1);
+                  }, 300);
+                }}
+                placeholder="Search all fields…"
+                className="admin-input w-full py-2 pl-9 text-sm"
+              />
             </div>
           </div>
 
@@ -901,6 +963,12 @@ export default function LeadsPage() {
                       Two templates are used automatically: leads <strong>without</strong> a website get
                       the no-website proposal; leads <strong>with</strong> a website get the enhancement
                       proposal. Use {"{{companyName}}"} in subject or message for bulk sends.
+                      {emailSendIds.length > EMAIL_BATCH_SIZE && (
+                        <>
+                          {" "}
+                          Large selections are sent in batches of {EMAIL_BATCH_SIZE} automatically.
+                        </>
+                      )}
                     </>
                   )}
                 </p>
@@ -989,11 +1057,15 @@ export default function LeadsPage() {
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {emailSendProgress && (
+                    <p className="mr-auto text-xs text-purple-600 dark:text-purple-400">{emailSendProgress}</p>
+                  )}
                   <button
                     type="button"
                     onClick={closeEmailModal}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm dark:border-white/10"
+                    disabled={emailSending}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm disabled:opacity-50 dark:border-white/10"
                   >
                     Cancel
                   </button>
@@ -1010,7 +1082,11 @@ export default function LeadsPage() {
                     className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                   >
                     {emailSending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                    Send with smart templates
+                    {emailSending
+                      ? "Sending…"
+                      : emailSendIds.length > EMAIL_BATCH_SIZE
+                        ? `Send in ${Math.ceil(emailSendIds.length / EMAIL_BATCH_SIZE)} batches`
+                        : "Send with smart templates"}
                   </button>
                 </div>
               </div>
@@ -1022,8 +1098,9 @@ export default function LeadsPage() {
               <Loader2 className="animate-spin text-purple-500" />
             </div>
           ) : (
-            <div className="admin-card overflow-x-auto">
-              <table className="w-full min-w-[1200px] text-left text-sm">
+            <div className="admin-card max-w-full overflow-hidden">
+              <div className="max-w-full overflow-x-auto">
+                <table className="w-full min-w-[1200px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-white/10">
                     <th className="p-3">
@@ -1069,7 +1146,21 @@ export default function LeadsPage() {
                       <td className="p-3 admin-text-muted">{lead.postalCode || "—"}</td>
                       <td className="p-3">{lead.phone || "—"}</td>
                       <td className="p-3 text-purple-600 dark:text-purple-400">{lead.email || "—"}</td>
-                      <td className="p-3 admin-text-muted text-xs">{lead.website || "—"}</td>
+                      <td className="p-3 admin-text-muted text-xs max-w-[180px] truncate">
+                        {lead.website?.trim() ? (
+                          <a
+                            href={websiteHref(lead.website)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-600 hover:underline dark:text-purple-400"
+                            title={lead.website}
+                          >
+                            {lead.website}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="p-3">
                         <select
                           value={lead.status === "contacted" ? "emailed" : lead.status}
@@ -1121,6 +1212,7 @@ export default function LeadsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
 
               {savedData?.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-4 p-4">

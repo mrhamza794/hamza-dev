@@ -2,25 +2,10 @@ import connectDB from "@/lib/mongodb";
 import OsmLead from "@/lib/models/OsmLead";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { readJsonBody, sendJson, methodNotAllowed } from "@/lib/pagesApi";
+import { buildLeadListFilter } from "@/lib/osm/leadFilters";
 
 function buildListFilter(query) {
-  const filter = { email: { $nin: [null, ""] } };
-  if (query.city) filter.city = query.city;
-  if (query.countryCode) filter.countryCode = query.countryCode.toUpperCase();
-  if (query.category) filter.category = query.category;
-  if (query.status) {
-    filter.status =
-      query.status === "emailed" ? { $in: ["emailed", "contacted"] } : query.status;
-  }
-  if (query.q) {
-    filter.companyName = { $regex: query.q, $options: "i" };
-  }
-  if (query.hasWebsite === "yes") {
-    filter.website = { $exists: true, $nin: [null, ""] };
-  } else if (query.hasWebsite === "no") {
-    filter.$or = [{ website: null }, { website: "" }, { website: { $exists: false } }];
-  }
-  return filter;
+  return buildLeadListFilter(query);
 }
 
 function normalizeEmailKey(email) {

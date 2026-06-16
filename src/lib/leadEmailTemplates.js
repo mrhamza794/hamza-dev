@@ -17,13 +17,13 @@ export const DEFAULT_LEAD_EMAIL_TEMPLATES = {
     subject: "Professional website proposal for {{companyName}}",
     message: `I hope this message finds you well. My name is ${SENDER}, a ${ROLE} with ${EXPERIENCE} of experience building modern web applications for businesses like {{companyName}}.
 
-Today, most customers search online before they call, visit, or buy. When a business does not have a professional website, it often loses trust, visibility, and leads to competitors who are easier to find on Google and social platforms.
+Today, most customers look online before they call, visit, or buy. When a business does not have a professional website, it often loses trust and leads to competitors who are easier to reach online.
 
-I help businesses launch fast, credible, and conversion-focused websites using a modern stack including Next.js, React, Node.js, and Tailwind CSS — chosen for performance, SEO, mobile responsiveness, and long-term scalability.
+I help businesses launch fast, credible, and easy-to-use websites using a modern stack including Next.js, React, Node.js, and Tailwind CSS — chosen for performance, mobile responsiveness, and long-term scalability.
 
 What a professional website can do for {{companyName}}:
 • Build credibility and trust with first-time customers
-• Make your business discoverable 24/7 on search engines
+• Make your business easy to find and contact online, any time
 • Showcase services, location, and contact details clearly
 • Turn visitors into calls, bookings, and sales inquiries
 • Strengthen your brand with a clean, modern user experience
@@ -42,16 +42,16 @@ Thank you for your time.`,
     subject: "Website enhancement proposal for {{companyName}}",
     message: `I hope you are doing well. My name is ${SENDER}, a ${ROLE} with ${EXPERIENCE} of experience helping businesses improve their online presence.
 
-I came across {{companyName}} and noticed you already have a website — which is a strong foundation. Many businesses still miss opportunities because their site is slow, outdated, not mobile-friendly, or not optimized for search and conversions.
+I came across {{companyName}} and noticed you already have a website — which is a strong foundation. Many businesses still miss opportunities because their site is slow, outdated, hard to use on mobile, or does not clearly guide visitors to get in touch.
 
-I specialize in upgrading and rebuilding websites using Next.js, React, Node.js, and Tailwind CSS — a modern stack designed for speed, SEO, security, and maintainability.
+I specialize in upgrading and rebuilding websites using Next.js, React, Node.js, and Tailwind CSS — a modern stack designed for speed, security, and maintainability.
 
 How an enhanced website can impact {{companyName}}:
-• Faster load times and better mobile experience for customers
-• Improved Google visibility and stronger local search presence
-• Clearer service messaging that converts visitors into leads
-• Modern design that reflects the quality of your business
-• Easier future updates for promotions, content, and new services
+• Faster load times and a better mobile experience for customers
+• Clearer service messaging that helps visitors understand what you offer
+• A more professional look that reflects the quality of your business
+• Easier ways for customers to call, message, or request a quote
+• Simpler future updates for promotions, content, and new services
 
 Whether you need a full redesign or targeted improvements to your current site, I can share a practical proposal with scope, timeline, and expected business outcomes.
 

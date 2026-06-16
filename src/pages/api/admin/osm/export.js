@@ -2,6 +2,7 @@ import connectDB from "@/lib/mongodb";
 import OsmLead from "@/lib/models/OsmLead";
 import { requireAdmin } from "@/lib/requireAdmin";
 import { methodNotAllowed } from "@/lib/pagesApi";
+import { buildLeadListFilter } from "@/lib/osm/leadFilters";
 
 function escapeCsv(value) {
   const str = value == null ? "" : String(value);
@@ -16,16 +17,7 @@ export default async function handler(req, res) {
 
   await connectDB();
 
-  const filter = { email: { $nin: [null, ""] } };
-  if (req.query.status) {
-    filter.status =
-      req.query.status === "emailed" ? { $in: ["emailed", "contacted"] } : req.query.status;
-  }
-  if (req.query.hasWebsite === "yes") {
-    filter.website = { $exists: true, $nin: [null, ""] };
-  } else if (req.query.hasWebsite === "no") {
-    filter.$or = [{ website: null }, { website: "" }, { website: { $exists: false } }];
-  }
+  const filter = buildLeadListFilter(req.query);
 
   const leads = await OsmLead.find(filter).sort({ companyName: 1 }).limit(1000).lean();
 
