@@ -12,13 +12,18 @@ const SETTING_KEYS = [
 export { SITE_SETTINGS_DEFAULTS, normalizeSiteSettings } from "@/lib/siteSettingsDefaults";
 
 export async function getSiteSettings() {
-  await connectDB();
+  try {
+    await connectDB();
 
-  const rows = await AdminSettings.find({ key: { $in: SETTING_KEYS } }).lean();
-  const map = {};
-  rows.forEach((row) => {
-    map[row.key] = row.value;
-  });
+    const rows = await AdminSettings.find({ key: { $in: SETTING_KEYS } }).lean();
+    const map = {};
+    rows.forEach((row) => {
+      map[row.key] = row.value;
+    });
 
-  return normalizeSiteSettings(map);
+    return normalizeSiteSettings(map);
+  } catch (error) {
+    console.error("[siteSettings] MongoDB unavailable, using defaults:", error.message);
+    return normalizeSiteSettings({});
+  }
 }

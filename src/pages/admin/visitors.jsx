@@ -12,8 +12,6 @@ import {
   Area,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,
@@ -23,6 +21,7 @@ import {
 } from "recharts";
 import { useAdminChartTheme } from "@/components/admin/useAdminChartTheme";
 import VisitorsDataTable from "@/components/admin/VisitorsDataTable";
+import PieBreakdownCard from "@/components/admin/PieBreakdownCard";
 
 const COLORS = ["#8B5CF6", "#06B6D4", "#EC4899", "#14B8A6", "#F59E0B", "#EF4444", "#10B981", "#3B82F6"];
 const TABS = ["Overview", "Visitors Table", "Geography", "Technology", "Behavior"];
@@ -246,45 +245,27 @@ export default function VisitorsPage() {
 
       {activeTab === "Technology" && data && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {[
-            {
-              title: "Devices",
-              data: data.analytics.devices.map((d) => ({ name: d._id || "unknown", value: d.count })),
-            },
-            {
-              title: "Browsers",
-              data: data.analytics.browsers.map((b) => ({ name: b._id || "unknown", value: b.count })),
-            },
-            {
-              title: "Operating Systems",
-              data: data.analytics.operatingSystems.map((o) => ({ name: o._id || "unknown", value: o.count })),
-            },
-          ].map((chartBlock, ci) => (
-            <div key={ci} className="admin-card p-6">
-              <h3 className="admin-heading">{chartBlock.title}</h3>
-              {chartBlock.data.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={chartBlock.data}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {chartBlock.data.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={chart.tooltipContent} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="py-12 text-center admin-text-muted">No data yet</p>
-              )}
-            </div>
-          ))}
+          <PieBreakdownCard
+            title="Devices"
+            data={data.analytics.devices.map((d) => ({ name: d._id || "unknown", value: d.count }))}
+            colors={COLORS}
+            chartTheme={chart}
+          />
+          <PieBreakdownCard
+            title="Browsers"
+            data={data.analytics.browsers.map((b) => ({ name: b._id || "unknown", value: b.count }))}
+            colors={COLORS}
+            chartTheme={chart}
+          />
+          <PieBreakdownCard
+            title="Operating Systems"
+            data={data.analytics.operatingSystems.map((o) => ({
+              name: o._id || "unknown",
+              value: o.count,
+            }))}
+            colors={COLORS}
+            chartTheme={chart}
+          />
         </div>
       )}
 

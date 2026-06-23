@@ -39,6 +39,50 @@ function getSrvHostname(srvUri) {
   return srvUri.replace(/^mongodb\+srv:\/\//, "").split("/")[0].split("?")[0];
 }
 
+function parseSrvAnswerData(data) {
+  const parts = String(data).trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const port = Number(parts[2]);
+  const name = parts[3].replace(/\.$/, "");
+  if (!port || !name) return null;
+  return {
+    name,
+    port,
+    priority: Number(parts[0]) || 0,
+    weight: Number(parts[1]) || 0,
+  };
+}
+
+async function resolveSrvViaDoH(fqdn) {
+  const url = `https://dns.google/resolve?name=${encodeURIComponent(fqdn)}&type=SRV`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  return (data.Answer || [])
+    .filter((answer) => answer.type === 33 && answer.data)
+    .map((answer) => parseSrvAnswerData(answer.data))
+    .filter(Boolean);
+}
+
+async function resolveSrvRecords(hostname) {
+  configureMongoDns();
+  const fqdn = hostname.startsWith("_mongodb._tcp.")
+    ? hostname
+    : `_mongodb._tcp.${hostname}`;
+
+  try {
+    return await dnsPromises.resolveSrv(fqdn);
+  } catch (nativeError) {
+    console.warn("[mongodb] Native SRV lookup failed, trying DNS-over-HTTPS:", nativeError.message);
+  }
+
+  const viaDoh = await resolveSrvViaDoH(fqdn);
+  if (viaDoh.length) return viaDoh;
+
+  throw new Error(`Could not resolve SRV records for ${fqdn}`);
+}
+
 /** Convert mongodb+srv://… to mongodb://… using explicit shard hosts. */
 async function resolveSrvMongoUri(srvUri) {
   configureMongoDns();
@@ -57,7 +101,7 @@ async function resolveSrvMongoUri(srvUri) {
   const pathAndQuery = slash === -1 ? "" : hostAndRest.slice(slash);
   const hostname = hostPart.split("?")[0];
 
-  const records = await dnsPromises.resolveSrv(`_mongodb._tcp.${hostname}`);
+  const records = await resolveSrvRecords(hostname);
   if (!records.length) {
     throw new Error(`No MongoDB SRV records found for ${hostname}`);
   }
@@ -91,14 +135,23 @@ async function getConnectionUri() {
 
   configureMongoDns();
 
+  const hostname = getSrvHostname(MONGO_URI);
+  let nativeSrvWorks = false;
+
   try {
-    await dnsPromises.resolveSrv(`_mongodb._tcp.${getSrvHostname(MONGO_URI)}`);
+    await dnsPromises.resolveSrv(`_mongodb._tcp.${hostname}`);
+    nativeSrvWorks = true;
+  } catch {
+    nativeSrvWorks = false;
+  }
+
+  if (nativeSrvWorks) {
     cached.uri = MONGO_URI;
     return MONGO_URI;
-  } catch {
-    cached.uri = await resolveSrvMongoUri(MONGO_URI);
-    return cached.uri;
   }
+
+  cached.uri = await resolveSrvMongoUri(MONGO_URI);
+  return cached.uri;
 }
 
 async function connectWithFallback() {

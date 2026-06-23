@@ -78,21 +78,7 @@ async function handlePost(req, res) {
   }
 }
 
-async function handleGet(req, res) {
-  try {
-    await connectDB();
-
-    const contacts = await Contact.find({}).sort({ createdAt: -1 }).lean();
-
-    return sendJson(res, 200, { success: true, data: contacts });
-  } catch (error) {
-    console.error("Contact GET Error:", error);
-    return sendJson(res, 500, { success: false, error: "Internal server error" });
-  }
-}
-
 export default async function handler(req, res) {
   if (req.method === "POST") return handlePost(req, res);
-  if (req.method === "GET") return handleGet(req, res);
-  return methodNotAllowed(res, ["POST", "GET"]);
+  return methodNotAllowed(res, ["POST"]);
 }
