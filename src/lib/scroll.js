@@ -3,7 +3,7 @@
 let lenisInstance = null;
 
 export function registerLenis(instance) {
-  lenisInstance = instance;
+  lenisInstance = instance ?? null;
 }
 
 export function getLenis() {

@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   Bug,
@@ -10,52 +9,7 @@ import {
   Music,
   Rocket,
 } from "lucide-react";
-
-function easeOutCubic(t) {
-  return 1 - (1 - t) ** 3;
-}
-
-function CountUp({ active, end, duration = 2.2, suffix = "", prefix = "", decimals = 0 }) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!active) {
-      setValue(0);
-      return undefined;
-    }
-
-    let frame;
-    const start = performance.now();
-    const ms = duration * 1000;
-
-    const tick = (now) => {
-      const progress = Math.min((now - start) / ms, 1);
-      const eased = easeOutCubic(progress);
-      const current = eased * end;
-      setValue(decimals > 0 ? current : Math.floor(current));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-      else setValue(end);
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [active, end, duration, decimals]);
-
-  const display =
-    decimals > 0
-      ? value.toFixed(decimals)
-      : value >= 1000
-        ? Math.floor(value).toLocaleString()
-        : Math.floor(value).toString();
-
-  return (
-    <span>
-      {prefix}
-      {display}
-      {suffix}
-    </span>
-  );
-}
+import { useGSAP } from "@/hooks/useGSAP";
 
 function StatCard({ stat, index, active }) {
   const Icon = stat.icon;
@@ -93,16 +47,11 @@ function StatCard({ stat, index, active }) {
         <p
           className={`relative z-10 font-space text-3xl font-bold tabular-nums sm:text-4xl md:text-5xl bg-linear-to-br ${stat.color} bg-clip-text text-transparent`}
         >
-          {active && (
-            <CountUp
-              active={active}
-              end={stat.number}
-              duration={2.5}
-              suffix={stat.suffix}
-              prefix={stat.prefix}
-              decimals={stat.decimals}
-            />
-          )}
+          {stat.prefix && <span className="stat-prefix">{stat.prefix}</span>}
+          <span className="stat-number" data-target={stat.number}>
+            0
+          </span>
+          {stat.suffix && <span className="stat-suffix">{stat.suffix}</span>}
         </p>
 
         <h3 className="relative z-10 mt-2 font-space text-base font-semibold text-slate-800 sm:mt-3 sm:text-lg dark:text-slate-100">
@@ -190,8 +139,8 @@ const STATS = [
     label: "Playlist Songs",
     description: "In coding playlists",
     color: "from-fuchsia-400 to-fuchsia-600",
-    iconBg: "from-fuchsia-500/25 to-fuchsia-600/5",
-    iconClass: "text-fuchsia-500 dark:text-fuchsia-400",
+    iconBg: "from-fuchsia-500/25 to-pink-600/5",
+    iconClass: "text-fuchsia-500 dark:text-pink-400",
     glowColor: "rgba(217, 70, 239, 0.35)",
     hoverShadow: "hover:shadow-fuchsia-500/20",
   },
@@ -209,13 +158,42 @@ const STATS = [
 ];
 
 export default function DeveloperStats() {
-  const sectionRef = useRef(null);
-  const inView = useInView(sectionRef, { once: true, amount: 0.15 });
+  const scopeRef = useGSAP(({ gsap, scope, reduceMotion }) => {
+    if (reduceMotion) return;
+
+    const numbers = scope.querySelectorAll(".stat-number");
+
+    numbers.forEach((el) => {
+      const target = parseInt(el.dataset.target || el.textContent.replace(/\D/g, ""), 10);
+      if (!target) return;
+
+      gsap.fromTo(
+        el,
+        { textContent: 0 },
+        {
+          textContent: target,
+          duration: 1.5,
+          ease: "power1.out",
+          snap: { textContent: 1 },
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+          onUpdate() {
+            el.textContent = Math.floor(Number(el.textContent)).toLocaleString();
+          },
+        }
+      );
+    });
+  }, []);
+
+  const inView = useInView(scopeRef, { once: true, amount: 0.15 });
 
   return (
     <section
       id="dev-stats"
-      ref={sectionRef}
+      ref={scopeRef}
       className="relative scroll-mt-24 overflow-hidden py-24 px-4 sm:px-6 md:py-32"
       aria-labelledby="dev-stats-title"
     >
@@ -254,16 +232,9 @@ export default function DeveloperStats() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STATS.map((stat, index) => (
-            <StatCard
-              key={stat.label}
-              stat={stat}
-              index={index}
-              active={inView}
-              liveValue={stat.live ? githubCommits ?? undefined : undefined}
-            />
+            <StatCard key={stat.label} stat={stat} index={index} active={inView} />
           ))}
         </div>
-
       </div>
     </section>
   );

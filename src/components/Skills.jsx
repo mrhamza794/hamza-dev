@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useGSAP } from "@/hooks/useGSAP";
 import {
   SiExpress,
   SiGithub,
@@ -33,20 +34,23 @@ const SKILLS = [
 
 const SkillCard = ({ skill }) => {
   const cardRef = useRef(null);
-  
-  // Track this card's specific scroll progress inside the viewport window
+
   const { scrollYProgress } = useScroll({
     target: cardRef,
-    offset: ["0 1", "1.2 1"] // From entering bottom of screen to fully constructed
+    offset: ["0 1", "1.2 1"],
   });
 
-  // width natively mapped to scroll progress to trigger "fill" as scrolled down
   const rawWidth = useTransform(scrollYProgress, [0, 1], [0, skill.level]);
-  
-  // Custom hinge entrance style variant
+
   const hingeVariant = {
     hidden: { opacity: 0, scale: 0.8, rotateX: 45, y: 100, transformPerspective: 1000 },
-    show: { opacity: 1, scale: 1, rotateX: 0, y: 0, transition: { duration: 0.8, ease: [0.34, 1.56, 0.64, 1] } }
+    show: {
+      opacity: 1,
+      scale: 1,
+      rotateX: 0,
+      y: 0,
+      transition: { duration: 0.8, ease: [0.34, 1.56, 0.64, 1] },
+    },
   };
 
   return (
@@ -56,7 +60,7 @@ const SkillCard = ({ skill }) => {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
-      className="group perspective relative"
+      className="skill-card group perspective relative"
     >
       <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6">
         <div className="flex items-center gap-4 mb-4 transform-translate-z-10">
@@ -65,15 +69,14 @@ const SkillCard = ({ skill }) => {
           </div>
           <h3 className="text-lg font-bold font-space text-slate-800 dark:text-slate-200">{skill.name}</h3>
         </div>
-        
-        {/* Progress Bar Container */}
+
         <div className="w-full bg-slate-200/90 dark:bg-white/5 rounded-full h-2 overflow-hidden transform-translate-z-20">
-          <motion.div 
+          <motion.div
             className="h-full bg-linear-to-r from-purple-500 to-cyan-500 rounded-full w-full origin-left"
-            style={{ scaleX: useTransform(rawWidth, width => width / 100) }}
+            style={{ scaleX: useTransform(rawWidth, (width) => width / 100) }}
           />
         </div>
-        
+
         <div className="mt-2 text-right transform-translate-z-20">
           <span className="text-sm text-slate-400 font-mono">{skill.level}%</span>
         </div>
@@ -83,19 +86,58 @@ const SkillCard = ({ skill }) => {
 };
 
 const Skills = () => {
+  const scopeRef = useGSAP(({ gsap, scope, isMobile, reduceMotion }) => {
+    if (reduceMotion || isMobile) return;
+
+    const cards = gsap.utils.toArray(scope.querySelectorAll(".skill-card"));
+    const wrapper = scope.querySelector(".skill-pin-wrapper");
+    if (!cards.length || !wrapper) return;
+
+    gsap.set(cards, {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      opacity: 0,
+      scale: 0.92,
+    });
+    gsap.set(cards[0], { opacity: 1, scale: 1 });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: wrapper,
+        start: "top top",
+        end: () => `+=${cards.length * 400}`,
+        scrub: 1,
+        pin: true,
+        anticipatePin: 1,
+      },
+    });
+
+    cards.forEach((card, i) => {
+      if (i === 0) return;
+      const prev = cards[i - 1];
+      tl.to(prev, { opacity: 0, scale: 0.92, duration: 0.4 }, i - 0.5);
+      tl.to(card, { opacity: 1, scale: 1, duration: 0.4 }, i - 0.5);
+    });
+
+    return () => tl.scrollTrigger?.kill();
+  }, []);
+
   return (
-    <section id="skills" className="relative py-20 px-4 md:px-8">
+    <section id="skills" ref={scopeRef} className="skill-pin-wrapper relative py-20 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center mb-16 text-center">
           <h2 className="text-4xl md:text-5xl font-bold font-space text-gradient mb-4">Technical Arsenal</h2>
           <div className="w-24 h-1 bg-linear-to-r from-purple-500 to-cyan-500 rounded-full" />
           <p className="mt-6 text-slate-600 dark:text-slate-400 max-w-2xl text-lg">
-            A comprehensive breakdown of my core competencies, focusing on the modern web stack and performance architecture.
+            A comprehensive breakdown of my core competencies, focusing on the modern web stack and performance
+            architecture.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SKILLS.map((skill, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative min-h-[500px]">
+          {SKILLS.map((skill) => (
             <SkillCard key={skill.name} skill={skill} />
           ))}
         </div>

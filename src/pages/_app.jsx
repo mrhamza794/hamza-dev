@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { VisitorTrackingProvider } from "@/hooks/useVisitorTracking";
 import { SiteSettingsProvider, useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { applyPerformanceClass, getPerformanceTier, shouldUseCustomCursor } from "@/lib/performance";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import { scrollToHash } from "@/lib/scroll";
 import AdminLayout from "@/components/admin/AdminLayout";
 import {
@@ -42,6 +43,7 @@ const jsonLd = [getPersonJsonLd(), getWebSiteJsonLd()];
 
 function PortfolioShell({ Component, pageProps }) {
   const settings = useSiteSettings();
+  useSmoothScroll();
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

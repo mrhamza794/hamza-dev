@@ -56,7 +56,7 @@ export default function Home() {
     <div className="relative min-h-screen">
       <Navigation />
 
-      <main>
+      <main className="overflow-x-clip">
         <div id="hero" className="hero-viewport">
           <Hero3D />
         </div>

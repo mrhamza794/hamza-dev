@@ -1,7 +1,7 @@
-import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Code, Palette, Server, MapPin, Briefcase, Calendar, GraduationCap } from "lucide-react";
 import { PERSONAL_INFO, EDUCATION, EXPERTISE } from "@/lib/constants";
+import { useGSAP } from "@/hooks/useGSAP";
 import Logo from "./Logo";
 
 const hingeVariant = {
@@ -26,10 +26,10 @@ const StatCard = ({ icon: Icon, text, delay }) => (
     whileInView="show"
     custom={delay}
     viewport={{ once: true, amount: 0.2 }}
-    className="flex items-center gap-3 glass-card bg-white/5! light:bg-white/75! p-3 px-4 rounded-xl border-white/10! light:border-slate-300/60! shadow-lg"
+    className="about-stat-chip flex w-full min-w-0 max-w-full items-center gap-3 glass-card bg-white/5! light:bg-white/75! p-3 px-4 rounded-xl border-white/10! light:border-slate-300/60! shadow-lg"
   >
-    <Icon size={16} className="text-cyan-400" />
-    <span className="text-sm text-slate-300 light:text-slate-700! font-medium">{text}</span>
+    <Icon size={16} className="shrink-0 text-cyan-400" />
+    <span className="min-w-0 text-sm text-slate-300 light:text-slate-700! font-medium">{text}</span>
   </motion.div>
 );
 
@@ -47,7 +47,7 @@ const ExpertiseCard = ({ title, description, icon: Icon, color, delay }) => {
       transition={{ delay, duration: 0.6 }}
       whileHover={{ y: -12, rotateX: 5, rotateY: 5, transition: { duration: 0.2 } }}
       viewport={{ once: true }}
-      className={`glass-card bg-white/5! light:bg-white/75! backdrop-blur-xl! p-8 rounded-[20px] border-l-4 ${colorMap[color]} group transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]`}
+      className={`about-content-block glass-card bg-white/5! light:bg-white/75! backdrop-blur-xl! p-8 rounded-[20px] border-l-4 ${colorMap[color]} group transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]`}
     >
       <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-transform">
         <Icon size={28} className={`text-${color}-500`} />
@@ -59,21 +59,44 @@ const ExpertiseCard = ({ title, description, icon: Icon, color, delay }) => {
 };
 
 const About = () => {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start end", "end start"] });
+  const scopeRef = useGSAP(({ gsap, scope, isMobile, reduceMotion }) => {
+    if (reduceMotion || isMobile) return;
+
+    const blocks = scope.querySelectorAll(".about-content-block");
+    gsap.set(blocks, { opacity: 0, y: 60 });
+    blocks.forEach((block) => {
+      gsap.fromTo(
+        block,
+        { opacity: 0, y: 60 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          scrollTrigger: {
+            trigger: block,
+            start: "top 85%",
+            end: "top 50%",
+            scrub: 0.8,
+          },
+        }
+      );
+    });
+  }, []);
+
+  const { scrollYProgress } = useScroll({ target: scopeRef, offset: ["start end", "end start"] });
   const yFast = useTransform(scrollYProgress, [0, 1], [0, 500]);
   const ySlow = useTransform(scrollYProgress, [0, 1], [0, -300]);
 
   return (
-    <section id="about" ref={containerRef} className="relative py-32 overflow-hidden">
+    <section id="about" ref={scopeRef} className="relative overflow-x-clip py-32">
       {/* Background Orbs with Parallax mapped to scroll relative progress */}
       <motion.div 
         style={{ y: yFast }}
-        className="absolute top-1/4 -left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] -z-10" 
+        className="pointer-events-none absolute top-1/4 left-0 -z-10 h-96 w-72 max-w-[50vw] rounded-full bg-purple-600/20 blur-[120px] sm:w-96" 
       />
       <motion.div 
         style={{ y: ySlow }}
-        className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[150px] -z-10" 
+        className="pointer-events-none absolute right-0 bottom-1/4 -z-10 h-96 w-72 max-w-[50vw] rounded-full bg-blue-600/10 blur-[150px] sm:w-[500px]" 
       />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -107,10 +130,10 @@ const About = () => {
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-20 items-center">
-          {/* Left: Profile Visual */}
-          <div className="relative group">
-            <div className="logo-backdrop-panel relative aspect-square min-h-[280px] overflow-hidden rounded-[2.5rem] bg-transparent">
+        <div className="grid grid-cols-1 items-start gap-20 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          {/* Left: Profile Visual — CSS sticky on desktop (no GSAP pin = no fixed-width overflow) */}
+          <div className="about-sticky-visual relative min-w-0 w-full lg:sticky lg:top-28 lg:self-start">
+            <div className="logo-backdrop-panel relative aspect-square w-full min-h-[280px] overflow-hidden rounded-[2.5rem] bg-transparent">
               <Logo variant="backdrop" clickable={false} />
               <div className="logo-text-scrim" aria-hidden />
 
@@ -119,7 +142,7 @@ const About = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 p-6 sm:p-8"
+                className="absolute inset-x-0 bottom-0 z-10 flex w-full min-w-0 flex-col gap-3 p-6 sm:p-8"
               >
                 <div className="mb-2">
                   <p className="font-space text-xl font-bold text-white light:text-slate-900">{PERSONAL_INFO.name}</p>
@@ -133,7 +156,7 @@ const About = () => {
           </div>
 
           {/* Right: Content Area */}
-          <div className="flex flex-col gap-12">
+          <div className="flex min-w-0 flex-col gap-12">
             <motion.div 
               variants={hingeVariant}
               initial="hidden"

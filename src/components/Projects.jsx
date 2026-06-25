@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ExternalLink, Code2, ArrowRight } from "lucide-react";
+import { ScrollTrigger } from "@/lib/gsapConfig";
 
 const PROJECTS = [
   {
@@ -63,20 +64,50 @@ const PROJECTS = [
 
 const Projects = () => {
   const containerRef = useRef(null);
-  
-  // Track scroll strictly through the 200vh tall container to map to tracking horizontal
+  const trackRef = useRef(null);
+  const [metrics, setMetrics] = useState({ scrollDistance: 0, sectionHeight: 0 });
+
+  useEffect(() => {
+    const measure = () => {
+      const track = trackRef.current;
+      if (!track) return;
+
+      const trackWidth = track.scrollWidth;
+      const viewWidth = window.innerWidth;
+      const endPadding = 48;
+      const scrollDistance = Math.max(0, trackWidth - viewWidth + endPadding);
+      const sectionHeight = window.innerHeight + scrollDistance;
+
+      setMetrics({ scrollDistance, sectionHeight });
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (trackRef.current) observer.observe(trackRef.current);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"]
+    offset: ["start start", "end end"],
   });
 
-  // Calculate maximum left translation. Assume roughly 400px width per card + gaps
-  // Mapped x translates the wide inner flex track leftwards
-  const xTransform = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]); 
+  const xTransform = useTransform(scrollYProgress, [0, 1], [0, -metrics.scrollDistance]);
 
   return (
-    <section id="projects" ref={containerRef} className="relative h-[220vh] bg-slate-100 dark:bg-slate-950">
-      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center items-center">
+    <section
+      id="projects"
+      ref={containerRef}
+      className="relative bg-slate-100 dark:bg-slate-950"
+      style={{ height: metrics.sectionHeight > 0 ? metrics.sectionHeight : "100vh" }}
+    >
+      <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden">
         
         {/* Absolute Parallax Orbs */}
         <motion.div 
@@ -99,10 +130,11 @@ const Projects = () => {
         </div>
 
         {/* Scroll-mapped Horizontal Track */}
-        <div className="w-full relative z-10 flex">
-          <motion.div 
-             className="flex gap-8 px-6 md:px-20 min-w-max"
-             style={{ x: xTransform }}
+        <div className="relative z-10 w-full flex">
+          <motion.div
+            ref={trackRef}
+            className="flex min-w-max gap-8 px-6 pr-12 md:px-20 md:pr-24"
+            style={{ x: xTransform }}
           >
             {PROJECTS.map((repo, idx) => {
               // Subtle localized scroll progress per card to create 3D folding
