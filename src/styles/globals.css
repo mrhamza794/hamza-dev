@@ -340,11 +340,6 @@ html.admin-route.dark body {
     text-align: center;
     max-width: 36rem;
   }
-
-  .light .hero-viewport .hero-stats {
-    border-color: rgb(148 163 184 / 0.35);
-    background: rgb(255 255 255 / 0.45);
-  }
 }
 
 @media (min-width: 1024px) {
@@ -503,12 +498,17 @@ footer .glass-card:hover {
          drop-shadow(0 0 12px rgba(6, 182, 212, 0.3));
 }
 
-/* Panels that host backdrop logos — stay visually empty */
-.logo-backdrop-panel {
+/* Panels that host backdrop logos — stay visually empty (hero uses matched plate) */
+.logo-backdrop-panel:not(.hero-logo-panel) {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   isolation: auto;
+}
+
+.logo-backdrop-panel {
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* Dark: bridge baked-in logo PNG bg → page tones so the square edge disappears */
@@ -528,6 +528,10 @@ footer .glass-card:hover {
 }
 
 .logo-backdrop-panel .logo-backdrop-wrap {
+  z-index: 1;
+}
+
+.hero-logo-panel .logo-backdrop-wrap {
   z-index: 1;
 }
 
@@ -567,9 +571,8 @@ footer .glass-card:hover {
   filter: contrast(1.1) saturate(1.14) brightness(1.04);
 }
 
-/* Hero + About: softer blend, no top crop (logo panels use overflow-visible) */
-.dark .about-logo-panel .logo-blend,
-.dark .hero-logo-panel .logo-blend {
+/* Hero + About: softer blend, no top crop (About keeps overflow-visible) */
+.dark .about-logo-panel .logo-blend {
   mix-blend-mode: soft-light;
   opacity: 0.72;
   transform: scale(1.05);
@@ -590,24 +593,79 @@ footer .glass-card:hover {
   );
 }
 
-.dark .about-logo-panel::before,
-.dark .hero-logo-panel::before {
+.dark .about-logo-panel::before {
   display: none;
 }
 
-.hero-profile-frame,
-.about-profile-frame {
-  isolation: auto;
+/* Hero: transparent PNG — sits on glass, no plate or masks */
+.hero-profile-frame {
+  isolation: isolate;
+  overflow: visible;
+  aspect-ratio: 1 / 1;
 }
 
-.light .about-logo-panel .logo-blend,
+.dark .hero-logo-panel,
+.light .hero-logo-panel {
+  background: transparent !important;
+}
+
+.dark .hero-logo-panel::before,
+.light .hero-logo-panel::before,
+.dark .hero-logo-panel::after,
+.light .hero-logo-panel::after {
+  display: none;
+}
+
+/* Transparent backdrop logos — no legacy blend/mask on PNG alpha */
+.logo-backdrop-image {
+  mix-blend-mode: normal;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.dark .hero-logo-panel .logo-backdrop-image {
+  filter: drop-shadow(0 0 28px rgb(139 92 246 / 0.22)) drop-shadow(0 0 48px rgb(6 182 212 / 0.12));
+}
+
+.light .hero-logo-panel .logo-backdrop-image {
+  filter: drop-shadow(0 0 18px rgb(139 92 246 / 0.1)) drop-shadow(0 0 30px rgb(6 182 212 / 0.07));
+}
+
+.dark .about-logo-panel .logo-backdrop-image {
+  filter: drop-shadow(0 0 22px rgb(139 92 246 / 0.18));
+}
+
+.light .about-logo-panel .logo-backdrop-image {
+  filter: drop-shadow(0 0 14px rgb(100 116 139 / 0.12));
+}
+
+.dark .hero-logo-panel .logo-blend,
 .light .hero-logo-panel .logo-blend {
+  mix-blend-mode: normal;
+  opacity: 1;
+  transform: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.light .about-logo-panel .logo-blend {
   transform: scale(1.08);
+}
+
+.about-profile-frame {
+  isolation: auto;
 }
 
 @supports (mix-blend-mode: plus-lighter) {
   .dark .logo-blend {
     mix-blend-mode: screen;
+  }
+
+  .dark .hero-logo-panel .logo-blend {
+    mix-blend-mode: normal;
   }
 }
 

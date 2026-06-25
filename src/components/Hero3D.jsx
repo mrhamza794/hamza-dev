@@ -176,7 +176,7 @@ const Hero3D = () => {
   }, []);
 
   const stats = [
-    { label: "Experience", value: PERSONAL_INFO.experience, icon: <Briefcase size={16} /> },
+    { label: "Years Experience", value: "3+", icon: <Briefcase size={16} /> },
     { label: "Completed", value: "50+", icon: <Star size={16} /> },
     { label: "Technologies", value: "15+", icon: <Code size={16} /> },
   ];
@@ -222,7 +222,7 @@ const Hero3D = () => {
               />
               <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 dark:ring-white/5" />
 
-              <div className="hero-content-grid relative grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.38fr)] lg:gap-x-10 lg:gap-y-6 lg:overflow-hidden lg:p-8 xl:gap-x-14">
+              <div className="hero-content-grid relative grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.38fr)] lg:gap-x-10 lg:gap-y-6 lg:overflow-visible lg:p-8 xl:gap-x-14">
                 <div className="hero-intro-block flex min-w-0 flex-col lg:col-start-1 lg:row-start-1">
                     <motion.div
                       initial={{ x: -24, opacity: 0 }}
@@ -250,10 +250,10 @@ const Hero3D = () => {
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, delay: 0.15 }}
-                  className="hero-visual hero-profile-frame relative hidden min-h-48 flex-1 lg:col-start-2 lg:row-start-1 lg:block"
+                  className="hero-visual hero-profile-frame relative hidden aspect-square w-full min-h-0 flex-1 lg:col-start-2 lg:row-start-1 lg:block"
                   style={{ transformStyle: "preserve-3d" }}
                 >
-                  <div className="logo-backdrop-panel hero-logo-panel absolute inset-0 overflow-visible rounded-2xl bg-transparent">
+                  <div className="logo-backdrop-panel hero-logo-panel absolute inset-0 overflow-visible">
                     <Logo variant="backdrop" clickable={false} />
                   </div>
                 </motion.div>
@@ -263,7 +263,7 @@ const Hero3D = () => {
                       initial={{ y: 24, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 1.45, duration: 0.75 }}
-                      className="hero-stats hero-stats-row grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-white/4 p-4 dark:border-white/8 dark:bg-white/3 sm:gap-10 sm:border-0 sm:bg-transparent sm:p-0 lg:flex lg:flex-wrap"
+                      className="hero-stats hero-stats-row grid grid-cols-3 gap-3 sm:gap-10 lg:flex lg:flex-wrap"
                     >
                       {stats.map((stat) => (
                         <div key={stat.label} className="min-w-0 text-center sm:text-left">

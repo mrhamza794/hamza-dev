@@ -37,7 +37,14 @@ export default function Logo({
   }, [resolvedTheme]);
 
   const isDark = !mounted || resolvedTheme === "dark";
-  const src = isDark ? "/assets/logo/logo-dark.png" : "/assets/logo/logo-light.png";
+  const src =
+    variant === "backdrop"
+      ? isDark
+        ? "/assets/logo/logo-dark-transparent.png"
+        : "/assets/logo/logo-light-transparent.png"
+      : isDark
+        ? "/assets/logo/logo-dark.png"
+        : "/assets/logo/logo-light.png";
 
   const handleClick = () => {
     if (clickable) {
@@ -58,7 +65,7 @@ export default function Logo({
           src={src}
           alt=""
           fill
-          className={`logo-blend object-contain object-center transition-opacity duration-700 ${
+          className={`logo-backdrop-image object-contain object-center transition-opacity duration-700 ${
             isLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={() => setIsLoaded(true)}
