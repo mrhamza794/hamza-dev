@@ -118,15 +118,17 @@ const Hero3D = () => {
       },
     });
 
-    tl.to(
-      ".hero-visual",
-      {
-        scale: isMobile ? 1 : 1.15,
-        rotateY: isMobile ? 0 : 8,
-        duration: 0.35,
-      },
-      0.3
-    );
+    if (!isMobile) {
+      tl.to(
+        ".hero-visual",
+        {
+          scale: 1.15,
+          rotateY: 8,
+          duration: 0.35,
+        },
+        0.3
+      );
+    }
     tl.to(
       [".hero-badge", ".hero-tagline"],
       {
@@ -156,15 +158,17 @@ const Hero3D = () => {
       },
       0.65
     );
-    tl.to(
-      ".hero-visual",
-      {
-        scale: isMobile ? 1 : 0.7,
-        opacity: 0,
-        duration: 0.3,
-      },
-      0.7
-    );
+    if (!isMobile) {
+      tl.to(
+        ".hero-visual",
+        {
+          scale: 0.7,
+          opacity: 0,
+          duration: 0.3,
+        },
+        0.7
+      );
+    }
     tl.to(".hero-orb-1", { x: -150, y: -100, opacity: 0, duration: 0.35 }, 0.65);
     tl.to(".hero-orb-2", { x: 150, y: 100, opacity: 0, duration: 0.35 }, 0.65);
 
@@ -218,9 +222,8 @@ const Hero3D = () => {
               />
               <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 dark:ring-white/5" />
 
-              <div className="hero-content-grid relative grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-y-auto p-4 sm:gap-8 sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.38fr)] lg:gap-x-10 lg:overflow-hidden lg:p-8 xl:gap-x-14">
-                <div className="hero-main-col flex min-h-0 min-w-0 flex-col justify-between">
-                  <div className="hero-intro-block flex flex-col">
+              <div className="hero-content-grid relative grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(240px,0.38fr)] lg:gap-x-10 lg:gap-y-6 lg:overflow-hidden lg:p-8 xl:gap-x-14">
+                <div className="hero-intro-block flex min-w-0 flex-col lg:col-start-1 lg:row-start-1">
                     <motion.div
                       initial={{ x: -24, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
@@ -237,28 +240,40 @@ const Hero3D = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 1.2, duration: 1 }}
-                      className="hero-description max-w-lg text-sm leading-[1.7] text-slate-600 dark:text-slate-300 sm:text-base sm:leading-[1.75] lg:max-w-xl"
+                      className="hero-description max-w-lg text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:text-base lg:max-w-xl lg:leading-[1.75]"
                     >
                       {PERSONAL_INFO.bio}
                     </motion.p>
-                  </div>
+                </div>
 
-                  <div className="hero-actions-block flex flex-col">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, delay: 0.15 }}
+                  className="hero-visual hero-profile-frame relative hidden min-h-48 flex-1 lg:col-start-2 lg:row-start-1 lg:block"
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  <div className="logo-backdrop-panel hero-logo-panel absolute inset-0 overflow-visible rounded-2xl bg-transparent">
+                    <Logo variant="backdrop" clickable={false} />
+                  </div>
+                </motion.div>
+
+                <div className="hero-actions-block flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-2 lg:gap-[clamp(1rem,2.5vh,1.75rem)]">
                     <motion.div
                       initial={{ y: 24, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 1.45, duration: 0.75 }}
-                      className="hero-stats hero-stats-row flex flex-wrap gap-6 sm:gap-10"
+                      className="hero-stats hero-stats-row grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-white/4 p-4 dark:border-white/8 dark:bg-white/3 sm:gap-10 sm:border-0 sm:bg-transparent sm:p-0 lg:flex lg:flex-wrap"
                     >
                       {stats.map((stat) => (
-                        <div key={stat.label} className="text-center sm:text-left">
-                          <div className="mb-1.5 flex justify-center text-cyan-600 sm:justify-start dark:text-cyan-400">
+                        <div key={stat.label} className="min-w-0 text-center sm:text-left">
+                          <div className="mb-1 flex justify-center text-cyan-600 sm:mb-1.5 sm:justify-start dark:text-cyan-400">
                             {stat.icon}
                           </div>
-                          <p className="font-space text-xl font-bold tabular-nums text-gradient sm:text-2xl">
+                          <p className="font-space text-lg font-bold tabular-nums text-gradient sm:text-2xl">
                             {stat.value}
                           </p>
-                          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                          <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500 sm:text-[10px] sm:tracking-widest dark:text-slate-400">
                             {stat.label}
                           </p>
                         </div>
@@ -269,14 +284,14 @@ const Hero3D = () => {
                       initial={{ y: 24, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 1.75, duration: 0.75 }}
-                      className="hero-ctas flex flex-wrap gap-3 sm:gap-4"
+                      className="hero-ctas flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4"
                     >
                       <button
                         type="button"
                         onClick={() =>
                           document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" })
                         }
-                        className="hero-cta-primary group relative flex items-center gap-2 overflow-hidden rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-5 py-2.5 font-space text-sm font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(37,99,235,0.45)] sm:px-6 sm:py-3 sm:text-base"
+                        className="hero-cta-primary group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-linear-to-r from-purple-600 to-blue-600 px-5 py-3 font-space text-sm font-bold text-white transition-all hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(37,99,235,0.45)] sm:w-auto sm:px-6 sm:text-base"
                       >
                         <div className="absolute inset-0 -translate-x-full bg-white/20 transition-transform duration-500 group-hover:translate-x-full" />
                         View My Work
@@ -291,87 +306,72 @@ const Hero3D = () => {
                         onClick={() =>
                           document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
                         }
-                        className="flex items-center gap-2 rounded-xl border-2 border-white/20 bg-white/4 px-5 py-2.5 font-space text-sm font-bold text-slate-900 transition-all hover:border-white/30 hover:bg-white/10 dark:text-white sm:px-6 sm:py-3 sm:text-base"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/20 bg-white/4 px-5 py-3 font-space text-sm font-bold text-slate-900 transition-all hover:border-white/30 hover:bg-white/10 dark:text-white sm:w-auto sm:px-6 sm:text-base"
                       >
                         Contact Me
                         <Mail size={18} className="sm:h-5 sm:w-5" />
                       </button>
                     </motion.div>
-                  </div>
                 </div>
 
                 <motion.div
                   initial={{ opacity: 0, x: 28 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="hero-side-col relative z-30 flex min-h-0 flex-col justify-between border-t border-white/10 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0 xl:pl-10 dark:border-white/8"
+                  className="hero-side-meta flex min-w-0 flex-col gap-4 border-t border-white/10 pt-4 dark:border-white/8 sm:gap-5 lg:col-start-2 lg:row-start-2 lg:border-l lg:border-t-0 lg:pt-0 lg:pl-8 xl:pl-10"
                   style={{ perspective: 1200 }}
                 >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8 }}
-                    className="hero-visual hero-profile-frame relative min-h-32 w-full flex-1 rounded-2xl sm:min-h-40 lg:min-h-48 lg:rounded-2xl"
-                    style={{ transformStyle: "preserve-3d" }}
-                  >
-                    <div className="logo-backdrop-panel hero-logo-panel absolute inset-0 overflow-visible rounded-2xl bg-transparent lg:rounded-2xl">
-                      <Logo variant="backdrop" clickable={false} />
+                  <div>
+                    <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 sm:mb-3 sm:text-left dark:text-slate-400">
+                      Stack
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4 sm:justify-start sm:gap-5 lg:gap-6">
+                      {heroStack.map(({ Icon, label, color }) => (
+                        <Icon
+                          key={label}
+                          className={`h-6 w-6 shrink-0 opacity-90 transition-opacity hover:opacity-100 sm:h-7 sm:w-7 ${color}`}
+                          title={label}
+                          aria-label={label}
+                        />
+                      ))}
                     </div>
-                  </motion.div>
+                  </div>
 
-                  <div className="hero-side-meta flex flex-col">
-                    <div>
-                      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                        Stack
-                      </p>
-                      <div className="flex flex-wrap gap-5 sm:gap-6">
-                        {heroStack.map(({ Icon, label, color }) => (
-                          <Icon
-                            key={label}
-                            className={`h-7 w-7 shrink-0 opacity-90 transition-opacity hover:opacity-100 ${color}`}
-                            title={label}
-                            aria-label={label}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-slate-700 sm:justify-start dark:text-slate-300">
+                    <MapPin
+                      className="h-4 w-4 shrink-0 text-cyan-600 dark:text-cyan-400"
+                      aria-hidden
+                    />
+                    <span>{PERSONAL_INFO.location}</span>
+                  </div>
 
-                    <div className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
-                      <MapPin
-                        className="mt-0.5 h-5 w-5 shrink-0 text-cyan-600 dark:text-cyan-400"
-                        aria-hidden
-                      />
-                      <span>{PERSONAL_INFO.location}</span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                        </span>
-                        Open to opportunities
+                  <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/8 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                       </span>
-                      <div className="flex gap-2 lg:ml-auto">
-                        <a
-                          href={PERSONAL_INFO.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-purple-500/35 hover:text-purple-600 dark:text-white dark:hover:text-cyan-400"
-                          aria-label="GitHub"
-                        >
-                          <FaGithub className="h-[18px] w-[18px]" />
-                        </a>
-                        <a
-                          href={PERSONAL_INFO.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-cyan-500/35 hover:text-cyan-600 dark:text-white dark:hover:text-cyan-400"
-                          aria-label="LinkedIn"
-                        >
-                          <FaLinkedinIn className="h-[18px] w-[18px]" />
-                        </a>
-                      </div>
+                      Open to opportunities
+                    </span>
+                    <div className="flex gap-2 lg:ml-auto">
+                      <a
+                        href={PERSONAL_INFO.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-purple-500/35 hover:text-purple-600 dark:text-white dark:hover:text-cyan-400"
+                        aria-label="GitHub"
+                      >
+                        <FaGithub className="h-[18px] w-[18px]" />
+                      </a>
+                      <a
+                        href={PERSONAL_INFO.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-cyan-500/35 hover:text-cyan-600 dark:text-white dark:hover:text-cyan-400"
+                        aria-label="LinkedIn"
+                      >
+                        <FaLinkedinIn className="h-[18px] w-[18px]" />
+                      </a>
                     </div>
                   </div>
                 </motion.div>
