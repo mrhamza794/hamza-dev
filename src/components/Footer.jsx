@@ -14,11 +14,11 @@ const Footer = () => {
   };
 
   return (
-    <footer className="footer-chrome relative w-full border-t border-white/10 light:border-slate-300/60! bg-black/25! light:bg-white/35! backdrop-blur-xl rounded-none! overflow-x-hidden overflow-y-hidden">
+    <footer className="footer-chrome relative w-full rounded-none! overflow-x-hidden overflow-y-hidden">
       {/* Background Decor */}
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-300/30 dark:bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="container mx-auto px-6 py-16 max-w-[1400px] relative z-10">
+      <div className="home-container py-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-8 mb-16">
           
           {/* Column 1: Branding */}

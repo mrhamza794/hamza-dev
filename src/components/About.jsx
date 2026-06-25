@@ -26,7 +26,7 @@ const StatCard = ({ icon: Icon, text, delay }) => (
     whileInView="show"
     custom={delay}
     viewport={{ once: true, amount: 0.2 }}
-    className="about-stat-chip flex w-full min-w-0 max-w-full items-center gap-3 glass-card bg-white/5! light:bg-white/75! p-3 px-4 rounded-xl border-white/10! light:border-slate-300/60! shadow-lg"
+    className="about-stat-chip glass-card glass-card--static flex w-full min-w-0 max-w-full items-center gap-3 p-3 px-4 rounded-xl shadow-lg"
   >
     <Icon size={16} className="shrink-0 text-cyan-400" />
     <span className="min-w-0 text-sm text-slate-300 light:text-slate-700! font-medium">{text}</span>
@@ -47,7 +47,7 @@ const ExpertiseCard = ({ title, description, icon: Icon, color, delay }) => {
       transition={{ delay, duration: 0.6 }}
       whileHover={{ y: -12, rotateX: 5, rotateY: 5, transition: { duration: 0.2 } }}
       viewport={{ once: true }}
-      className={`about-content-block glass-card bg-white/5! light:bg-white/75! backdrop-blur-xl! p-8 rounded-[20px] border-l-4 ${colorMap[color]} group transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]`}
+      className={`about-content-block glass-card glass-card--lg border-l-4 ${colorMap[color]} group transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-8 rounded-[20px]`}
     >
       <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-transform">
         <Icon size={28} className={`text-${color}-500`} />
@@ -99,7 +99,7 @@ const About = () => {
         className="pointer-events-none absolute right-0 bottom-1/4 -z-10 h-96 w-72 max-w-[50vw] rounded-full bg-blue-600/10 blur-[150px] sm:w-[500px]" 
       />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
+      <div className="home-container">
         
         {/* Section Header */}
         <motion.div 
@@ -207,7 +207,7 @@ const About = () => {
               whileInView={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.5 }}
               viewport={{ once: true }}
-              className="relative glass-card bg-linear-to-r from-purple-900/20 to-cyan-900/20 light:from-white light:to-slate-100 p-8 rounded-2xl border-b-2 border-cyan-500/30 group overflow-hidden"
+              className="relative glass-card glass-card--lg bg-linear-to-r from-purple-900/15 to-cyan-900/15 light:from-white/60 light:to-slate-100/50 p-8 rounded-2xl border-b-2 border-cyan-500/30 group overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
                 <GraduationCap size={80} className="animate-float" />

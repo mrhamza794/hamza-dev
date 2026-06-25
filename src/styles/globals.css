@@ -44,6 +44,14 @@
   --animate-spin-slow: spin-slow 3s linear infinite;
 }
 
+@utility home-container {
+  position: relative;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1400px;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
 :root {
   --nav-offset-top: 1rem;
   --nav-bar-height: 4.5rem;
@@ -56,17 +64,30 @@
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   --secondary-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
   
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: blur(8px) saturate(140%);
+  --glass-bg: rgba(255, 255, 255, 0.12);
+  --glass-bg-hover: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-blur-amount: 20px;
+  --glass-section-blur-amount: 24px;
+  --glass-saturate: 125%;
+  --glass-section-bg: rgba(255, 255, 255, 0.09);
+  --glass-input-bg: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(var(--glass-blur-amount)) saturate(var(--glass-saturate));
+  --glass-shadow: 0 8px 28px rgba(2, 6, 23, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-radius: 1rem;
+  --glass-radius-lg: 1.25rem;
 }
 
 .light {
   --bg-gradient: linear-gradient(180deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%);
   --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #0891b2 100%);
   --secondary-gradient: linear-gradient(135deg, #cffafe 0%, #e0e7ff 100%);
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(148, 163, 184, 0.45);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(148, 163, 184, 0.42);
+  --glass-section-bg: rgba(255, 255, 255, 0.24);
+  --glass-input-bg: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 8px 28px rgba(148, 163, 184, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.78);
   --color-text-primary: #0f172a;
   --color-text-secondary: #1e293b;
   --color-text-muted: #475569;
@@ -231,17 +252,67 @@ html.admin-route.dark body {
   .glass-card {
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--glass-radius);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 60px 0 rgba(31, 38, 135, 0.5);
+    background: var(--glass-bg-hover);
+    border-color: rgba(255, 255, 255, 0.14);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 36px rgba(2, 6, 23, 0.16);
+  }
+
+  .glass-card--lg {
+    border-radius: var(--glass-radius-lg);
+  }
+
+  .glass-card--static:hover {
+    transform: none;
+    background: var(--glass-bg);
+  }
+
+  .glass-section-bg {
+    background: var(--glass-section-bg);
+    backdrop-filter: blur(var(--glass-section-blur-amount)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-section-blur-amount)) saturate(var(--glass-saturate));
+    border-block: 1px solid var(--glass-border);
+  }
+
+  .glass-chip {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-input {
+    background: var(--glass-input-bg);
+    border: 1px solid var(--glass-border);
+    color: inherit;
+  }
+
+  .glass-hero {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.06) 100%
+    );
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .glass-pill {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
   }
 
   .text-gradient {
@@ -358,22 +429,27 @@ html.admin-route.dark body {
   transform: none;
 }
 
-.light .glass-card {
-  box-shadow: 0 8px 28px 0 rgba(148, 163, 184, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+.light .glass-section-bg {
+  background: var(--glass-section-bg);
 }
 
-.light .hero-panel {
-  border-color: rgba(148, 163, 184, 0.45);
-  box-shadow:
-    0 4px 28px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+.light .glass-input {
+  background: var(--glass-input-bg);
+}
+
+.light .glass-hero {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.62) 50%,
+    rgba(255, 255, 255, 0.42) 100%
+  );
 }
 
 .light .glass-card:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(100, 116, 139, 0.35);
-  box-shadow: 0 18px 48px 0 rgba(100, 116, 139, 0.2);
+  background: var(--glass-bg-hover);
+  border-color: rgba(100, 116, 139, 0.28);
+  box-shadow: 0 16px 40px rgba(100, 116, 139, 0.14);
 }
 
 .light .text-slate-500 {
@@ -712,11 +788,7 @@ nav .nav-glass-bar.glass-card:hover {
 }
 
 nav .nav-glass-bar.glass-card {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.light nav .nav-glass-bar.glass-card {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--glass-bg);
 }
 
 .logo-chrome-slot {
@@ -736,6 +808,10 @@ footer .footer-brand-col {
 
 footer.footer-chrome {
   box-shadow: none;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: 1px solid var(--glass-border);
 }
 
 footer.footer-chrome:hover {
@@ -769,6 +845,33 @@ footer.footer-chrome:hover {
 /* About profile overlay chips — no hover scale (prevents horizontal overflow inside card) */
 .about-stat-chip.glass-card:hover {
   transform: none;
+}
+
+.bug-game-viewport {
+  box-sizing: border-box;
+  height: calc(120dvh - var(--nav-total-height) - 1rem);
+  min-height: 0;
+}
+
+.bug-game-panel {
+  width: 100%;
+  max-width: none;
+  border-color: rgba(139, 92, 246, 0.18);
+}
+
+.bug-game-area {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.bug-sprite {
+  transform: translate3d(0, 0, 0);
+  transition: none;
+}
+
+.dark .bug-game-panel {
+  border-color: rgba(6, 182, 212, 0.14);
 }
 
 .animate-spin-slow {

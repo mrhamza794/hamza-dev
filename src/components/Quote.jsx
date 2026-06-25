@@ -15,7 +15,7 @@ const Quote = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="relative glass-card bg-white/40! light:bg-white/80! dark:bg-white/5! border border-white/15! light:border-slate-300/60! rounded-2xl md:rounded-3xl px-8 py-10 md:px-12 md:py-12 shadow-lg"
+          className="relative glass-card glass-card--lg px-8 py-10 md:px-12 md:py-12 shadow-lg"
         >
           <div className="absolute top-6 left-6 md:top-8 md:left-8 text-purple-400/40 dark:text-purple-400/30">
             <QuoteIcon className="w-10 h-10 md:w-12 md:h-12" strokeWidth={1.25} aria-hidden />
@@ -25,7 +25,7 @@ const Quote = () => {
               {QUOTE.text}
             </p>
             <footer className="mt-6 flex items-center gap-3">
-              <span className="h-px flex-1 max-w-[3rem] bg-linear-to-r from-purple-500 to-cyan-500 rounded-full" aria-hidden />
+              <span className="h-px flex-1 max-w-12 bg-linear-to-r from-purple-500 to-cyan-500 rounded-full" aria-hidden />
               <cite className="not-italic text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium tracking-wide">
                 {QUOTE.author}
               </cite>

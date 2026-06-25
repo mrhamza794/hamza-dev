@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,13 +26,17 @@ const SCORE_MESSAGES = [
 
   { max: 5, text: "Just getting started! 🐛" },
 
-  { max: 10, text: "Not bad for a human! 😊" },
+  { max: 20, text: "Not bad for a human! 😊" },
 
-  { max: 15, text: "Bug Hunter! 🎯" },
+  { max: 35, text: "Bug Hunter! 🎯" },
 
-  { max: 20, text: "Senior Debugger! 🔥" },
+  { max: 50, text: "Senior Debugger! 🔥" },
 
-  { max: 25, text: "Legendary Developer! ⭐" },
+  { max: 70, text: "Legendary Developer! ⭐" },
+
+  { max: 85, text: "Master of Bugs! 🤯" },
+
+  { max: 100, text: "Superhuman! 💯" },
 
   { max: Infinity, text: "Bug Terminator! 🚀 Are you even human?" },
 
@@ -60,20 +64,13 @@ function getBugConfig(width) {
 
 
 
-function randomVelocity(speed = 2.5) {
-
+function randomVelocity(speed = 3.8) {
   const angle = Math.random() * Math.PI * 2;
-
-  const mag = speed * (0.6 + Math.random() * 0.8);
-
+  const mag = speed * (0.75 + Math.random() * 0.65);
   return {
-
     vx: Math.cos(angle) * mag,
-
     vy: Math.sin(angle) * mag,
-
   };
-
 }
 
 
@@ -84,7 +81,7 @@ function createBug(id, bounds, size) {
 
   const maxY = Math.max(0, bounds.height - size);
 
-  const speed = 1.8 + Math.random() * 2.2;
+  const speed = 3.4 + Math.random() * 3.2;
 
 
 
@@ -125,26 +122,62 @@ function getComboPoints(combo) {
 
 
 function GameButton({ children, className = "", ...props }) {
-
   return (
-
     <button
-
       type="button"
-
       className={`contact-form-submit relative z-50 w-full cursor-pointer font-space font-semibold transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
-
       {...props}
-
     >
-
       {children}
-
     </button>
-
   );
-
 }
+
+function syncBugNodes(bugs, nodeRefs, hitPad) {
+  const pad = hitPad / 2;
+  const liveIds = new Set(bugs.map((b) => b.id));
+  for (const id of nodeRefs.keys()) {
+    if (!liveIds.has(id)) nodeRefs.delete(id);
+  }
+  bugs.forEach((bug) => {
+    const el = nodeRefs.get(bug.id);
+    if (el) {
+      el.style.transform = `translate3d(${bug.x - pad}px, ${bug.y - pad}px, 0)`;
+    }
+  });
+}
+
+function BugSprites({ bugs, hitPad, nodeRefsRef }) {
+  const nodeRefs = nodeRefsRef.current;
+  return bugs.map((bug) => (
+    <div
+      key={bug.id}
+      ref={(el) => {
+        if (!el) {
+          nodeRefs.delete(bug.id);
+          return;
+        }
+        nodeRefs.set(bug.id, el);
+      }}
+      className="bug-sprite pointer-events-none absolute left-0 top-0 z-20 flex select-none items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md"
+      style={{
+        width: bug.size + hitPad,
+        height: bug.size + hitPad,
+        willChange: "transform",
+        boxShadow: `0 0 24px ${bug.color}55, 0 4px 12px rgba(0,0,0,0.2)`,
+      }}
+      aria-hidden
+    >
+      <span
+        data-bug-emoji
+        className="pointer-events-none select-none text-2xl sm:text-3xl"
+      >
+        {bug.emoji}
+      </span>
+    </div>
+  ));
+}
+
 
 
 
@@ -193,6 +226,8 @@ export default function BugGame() {
 
 
   const gameAreaRef = useRef(null);
+  const bugNodeRefs = useRef(new Map());
+  const bugIdSeq = useRef(0);
 
   const rafRef = useRef(null);
 
@@ -215,17 +250,7 @@ export default function BugGame() {
 
 
   useEffect(() => {
-
-    bugsRef.current = bugs;
-
-  }, [bugs]);
-
-
-
-  useEffect(() => {
-
     scoreRef.current = score;
-
   }, [score]);
 
 
@@ -331,7 +356,15 @@ export default function BugGame() {
 
   }, [measureArea]);
 
+  const makeBugId = useCallback(() => {
+    bugIdSeq.current += 1;
+    return `bug-${bugIdSeq.current}`;
+  }, []);
 
+  useLayoutEffect(() => {
+    if (gameState !== "playing") return;
+    syncBugNodes(bugsRef.current, bugNodeRefs.current, bugConfigRef.current.hitPad);
+  }, [bugs, gameState]);
 
   const spawnBugs = useCallback((count) => {
 
@@ -339,22 +372,18 @@ export default function BugGame() {
 
     const cfg = bugConfigRef.current;
 
-    const list = Array.from({ length: count }, (_, i) =>
-
-      createBug(`${Date.now()}-${i}`, b, cfg.size)
-
+    const list = Array.from({ length: count }, () =>
+      createBug(makeBugId(), b, cfg.size)
     );
 
     setBugs(list);
 
     bugsRef.current = list;
 
-  }, []);
-
-
+  }, [makeBugId]);
 
   const startGame = useCallback(() => {
-
+    bugIdSeq.current = 0;
     comboRef.current = 0;
 
     lastSquashRef.current = 0;
@@ -372,6 +401,8 @@ export default function BugGame() {
     setNewRecord(false);
 
     setBugs([]);
+    bugsRef.current = [];
+    bugNodeRefs.current.clear();
 
     setPlayerName("");
 
@@ -432,6 +463,7 @@ export default function BugGame() {
     setBugs([]);
 
     bugsRef.current = [];
+    bugNodeRefs.current.clear();
 
 
 
@@ -595,109 +627,68 @@ export default function BugGame() {
 
 
     const tick = () => {
-
       const b = boundsRef.current;
-
       const cfg = bugConfigRef.current;
-
       const size = cfg.size;
+      const pad = cfg.hitPad / 2;
 
+      bugsRef.current = bugsRef.current.map((bug) => {
+        let { x, y, vx, vy } = bug;
 
+        const maxX = b.width - size;
+        const maxY = b.height - size;
 
-      setBugs((prev) =>
-
-        prev.map((bug) => {
-
-          let { x, y, vx, vy } = bug;
-
-          const maxX = b.width - size;
-
-          const maxY = b.height - size;
-
-
-
-          if (Math.random() < 0.03) {
-
-            vx += (Math.random() - 0.5) * 0.4;
-
-            vy += (Math.random() - 0.5) * 0.4;
-
-            const maxSpeed = 4.2;
-
-            const speed = Math.hypot(vx, vy) || 1;
-
-            if (speed > maxSpeed) {
-
-              vx = (vx / speed) * maxSpeed;
-
-              vy = (vy / speed) * maxSpeed;
-
-            }
-
+        if (Math.random() < 0.04) {
+          vx += (Math.random() - 0.5) * 0.65;
+          vy += (Math.random() - 0.5) * 0.65;
+          const maxSpeed = 7.5;
+          const speed = Math.hypot(vx, vy) || 1;
+          if (speed > maxSpeed) {
+            vx = (vx / speed) * maxSpeed;
+            vy = (vy / speed) * maxSpeed;
           }
+        }
 
+        x += vx;
+        y += vy;
 
+        if (x <= 0) {
+          x = 0;
+          vx = Math.abs(vx) * 0.95;
+        } else if (x >= maxX) {
+          x = maxX;
+          vx = -Math.abs(vx) * 0.95;
+        }
+        if (y <= 0) {
+          y = 0;
+          vy = Math.abs(vy) * 0.95;
+        } else if (y >= maxY) {
+          y = maxY;
+          vy = -Math.abs(vy) * 0.95;
+        }
 
-          x += vx;
+        const next = {
+          ...bug,
+          x,
+          y,
+          vx,
+          vy,
+          wiggle: bug.wiggle + 4,
+        };
 
-          y += vy;
-
-
-
-          if (x <= 0) {
-
-            x = 0;
-
-            vx = Math.abs(vx) * 0.95;
-
-          } else if (x >= maxX) {
-
-            x = maxX;
-
-            vx = -Math.abs(vx) * 0.95;
-
+        const el = bugNodeRefs.current.get(bug.id);
+        if (el) {
+          el.style.transform = `translate3d(${x - pad}px, ${y - pad}px, 0)`;
+          const emoji = el.querySelector("[data-bug-emoji]");
+          if (emoji) {
+            emoji.style.transform = `rotate(${Math.sin(next.wiggle * 0.08) * 12}deg)`;
           }
+        }
 
-          if (y <= 0) {
-
-            y = 0;
-
-            vy = Math.abs(vy) * 0.95;
-
-          } else if (y >= maxY) {
-
-            y = maxY;
-
-            vy = -Math.abs(vy) * 0.95;
-
-          }
-
-
-
-          return {
-
-            ...bug,
-
-            x,
-
-            y,
-
-            vx,
-
-            vy,
-
-            wiggle: bug.wiggle + 2.5,
-
-          };
-
-        })
-
-      );
-
-
+        return next;
+      });
 
       rafRef.current = requestAnimationFrame(tick);
-
     };
 
 
@@ -789,12 +780,11 @@ export default function BugGame() {
 
 
   const squashBug = useCallback(
-
-    (bugId, bug) => {
-
+    (bugId) => {
       if (gameStateRef.current !== "playing") return;
 
-
+      const bug = bugsRef.current.find((b) => b.id === bugId);
+      if (!bug) return;
 
       const now = Date.now();
 
@@ -821,13 +811,10 @@ export default function BugGame() {
 
 
       setBugs((prev) => {
-
-        const next = prev.filter((b) => b.id !== bugId);
-
+        const next = bugsRef.current.filter((b) => b.id !== bugId);
         bugsRef.current = next;
-
-        return next;
-
+        bugNodeRefs.current.delete(bugId);
+        return [...next];
       });
 
 
@@ -882,24 +869,46 @@ export default function BugGame() {
 
         const cfg = bugConfigRef.current;
 
-        const newBug = createBug(`${Date.now()}-spawn`, boundsRef.current, cfg.size);
+        const newBug = createBug(makeBugId(), boundsRef.current, cfg.size);
+        const next = [...bugsRef.current, newBug];
+        bugsRef.current = next;
+        setBugs([...next]);
 
-        setBugs((prev) => {
-
-          const next = [...prev, newBug];
-
-          bugsRef.current = next;
-
-          return next;
-
-        });
-
-      }, 180);
+      }, 60);
 
     },
 
-    [createParticles]
+    [createParticles, makeBugId]
 
+  );
+
+  const handleGamePointerDown = useCallback(
+    (e) => {
+      if (gameStateRef.current !== "playing") return;
+      if (e.target.closest("[data-game-ui]")) return;
+
+      e.preventDefault();
+
+      const rect = gameAreaRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const cfg = bugConfigRef.current;
+      const hitSize = cfg.size + cfg.hitPad;
+      const half = cfg.hitPad / 2;
+
+      for (let i = bugsRef.current.length - 1; i >= 0; i--) {
+        const bug = bugsRef.current[i];
+        const bx = bug.x - half;
+        const by = bug.y - half;
+        if (px >= bx && px <= bx + hitSize && py >= by && py <= by + hitSize) {
+          squashBug(bug.id);
+          return;
+        }
+      }
+    },
+    [squashBug]
   );
 
 
@@ -936,7 +945,7 @@ export default function BugGame() {
 
     });
 
-    squashBug(nearest.id, nearest);
+    squashBug(nearest.id);
 
   }, [squashBug]);
 
@@ -977,13 +986,9 @@ export default function BugGame() {
   return (
 
     <section
-
       id="bug-game"
-
-      className="relative scroll-mt-24 py-24 px-4 sm:px-6 md:py-32"
-
+      className="bug-game-viewport relative scroll-mt-24 flex flex-col overflow-hidden"
       aria-labelledby="bug-game-title"
-
     >
 
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -996,64 +1001,37 @@ export default function BugGame() {
 
 
 
-      <div className="relative mx-auto max-w-7xl">
+      <div className="home-container flex h-full min-h-0 flex-1 flex-col py-3 sm:py-4">
 
-        <div className="mb-10 text-center md:mb-12">
+        <header className="mb-3 shrink-0 text-center md:mb-4">
 
-          <h2 id="bug-game-title" className="font-space text-4xl font-bold text-gradient sm:text-5xl md:text-6xl">
+          <h2 id="bug-game-title" className="font-space text-3xl font-bold text-gradient sm:text-4xl">
 
             Debug Challenge
 
           </h2>
 
-          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 md:text-xl">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 md:text-base">
 
             How many bugs can you squash in 30 seconds?
 
           </p>
 
-          <motion.div
-
-            className="mx-auto mt-6 h-1 w-24 rounded-full bg-linear-to-r from-purple-500 to-cyan-500"
-
-            initial={{ scaleX: 0 }}
-
-            whileInView={{ scaleX: 1 }}
-
-            viewport={{ once: true }}
-
-            transition={{ duration: 0.6 }}
-
-          />
-
-        </div>
+          <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-linear-to-r from-purple-500 to-cyan-500" />
+        </header>
 
 
 
-        <div className="mx-auto max-w-4xl">
-
-          <div
-
-            className="glass-card pointer-events-auto relative z-10 overflow-hidden rounded-3xl border border-purple-500/20 p-4 sm:p-6 md:p-8 dark:border-cyan-500/15"
-
-            style={{
-
-              boxShadow:
-
-                "0 0 0 1px rgba(139,92,246,0.15), 0 20px 60px rgba(15,23,42,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
-
-            }}
-
-          >
+        <div className="glass-card glass-card--lg glass-card--static bug-game-panel pointer-events-auto relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-hidden p-3 sm:p-4 md:p-5">
 
             <div
 
               ref={gameAreaRef}
 
-              className={`bug-game-area relative mx-auto w-full overflow-hidden rounded-2xl bg-linear-to-br from-purple-900/10 via-slate-900/5 to-cyan-900/10 light:from-purple-100/40 light:to-cyan-50/30 h-[450px] md:h-[500px] lg:h-[600px] ${
+              onPointerDown={handleGamePointerDown}
 
-                gameState === "playing" ? "cursor-crosshair" : ""
-
+              className={`bug-game-area relative mx-auto min-h-[12rem] w-full min-w-0 flex-1 overflow-hidden rounded-2xl bg-linear-to-br from-purple-900/10 via-slate-900/5 to-cyan-900/10 light:from-purple-100/40 light:to-cyan-50/30 ${
+                gameState === "playing" ? "cursor-crosshair select-none touch-none" : ""
               }`}
 
               role={gameState === "playing" ? "application" : undefined}
@@ -1073,36 +1051,17 @@ export default function BugGame() {
 
 
               {gameState === "start" && (
-
                 <motion.div
-
-                  initial={{ opacity: 0, scale: 0.9 }}
-
+                  initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
-
-                  className="absolute inset-0 z-20 flex flex-col items-center justify-center p-8"
-
+                  className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 overflow-y-auto p-4 sm:p-6"
                 >
-
-                  <div className="mb-6 text-7xl sm:text-8xl animate-bounce" aria-hidden>
-
+                  <div className="text-5xl sm:text-6xl animate-bounce" aria-hidden>
                     🐛
-
                   </div>
 
-                  <h3 className="font-space text-3xl font-bold text-gradient">Debug Challenge</h3>
-
-                  <p className="mt-3 max-w-md text-center text-sm text-slate-600 dark:text-slate-400 sm:text-base">
-
-                    Squash as many bugs as you can in 30 seconds!
-
-                  </p>
-
-
-
                   {leaderboardStats.totalPlayers > 0 && (
-
-                    <div className="mt-6 flex flex-wrap justify-center gap-3 text-center">
+                    <div className="flex flex-wrap justify-center gap-2 text-center sm:gap-3">
 
                       <div className="glass-card rounded-full border border-white/10 px-4 py-2 text-sm light:border-slate-300/60">
 
@@ -1129,15 +1088,13 @@ export default function BugGame() {
 
 
                   {personalBest != null && personalBest > 0 && (
-                    <p className="mt-4 text-sm text-slate-500">
+                    <p className="text-sm text-slate-500">
                       Your best:{" "}
                       <span className="font-bold text-purple-500 dark:text-purple-400">{personalBest}</span> bugs
                     </p>
                   )}
 
-
-
-                  <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
+                  <div className="flex w-full max-w-xs flex-col gap-3">
 
                     <GameButton
 
@@ -1167,10 +1124,8 @@ export default function BugGame() {
 
                   </div>
 
-                  <p className="mt-4 text-xs text-slate-500">Spacebar squashes nearest bug while playing</p>
-
+                  <p className="text-xs text-slate-500">Spacebar squashes nearest bug while playing</p>
                 </motion.div>
-
               )}
 
 
@@ -1209,7 +1164,7 @@ export default function BugGame() {
 
 
 
-                    <div className="absolute top-4 left-4 z-10 glass-card rounded-full border border-white/15 px-5 py-2.5 light:border-slate-300/50">
+                    <div className="absolute top-4 left-4 z-30 glass-card rounded-full border border-white/15 px-5 py-2.5 light:border-slate-300/50" data-game-ui>
 
                       <motion.p
 
@@ -1236,8 +1191,8 @@ export default function BugGame() {
 
 
                     <div
-
-                      className={`absolute top-4 right-4 z-10 glass-card rounded-full border border-white/15 px-5 py-2.5 light:border-slate-300/50 ${
+                      data-game-ui
+                      className={`absolute top-4 right-4 z-30 glass-card rounded-full border border-white/15 px-5 py-2.5 light:border-slate-300/50 ${
 
                         isLowTime ? "animate-pulse" : ""
 
@@ -1279,7 +1234,8 @@ export default function BugGame() {
 
                       onClick={endGame}
 
-                      className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-700 dark:hover:text-slate-300"
+                      className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/10 hover:text-slate-700 dark:hover:text-slate-300"
+                      data-game-ui
 
                     >
 
@@ -1291,75 +1247,11 @@ export default function BugGame() {
 
 
 
-                    {bugs.map((bug) => (
-
-                      <motion.button
-
-                        key={bug.id}
-
-                        type="button"
-
-                        initial={{ scale: 0, opacity: 0 }}
-
-                        animate={{ scale: 1, opacity: 1 }}
-
-                        exit={{ scale: 0, rotate: 180, opacity: 0 }}
-
-                        transition={{ scale: { type: "spring", stiffness: 400, damping: 22 } }}
-
-                        onClick={(e) => {
-
-                          e.stopPropagation();
-
-                          squashBug(bug.id, bug);
-
-                        }}
-
-                        className="absolute flex touch-manipulation items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-90"
-
-                        style={{
-
-                          left: bug.x,
-
-                          top: bug.y,
-
-                          width: bug.size + bugConfig.hitPad,
-
-                          height: bug.size + bugConfig.hitPad,
-
-                          marginLeft: -bugConfig.hitPad / 2,
-
-                          marginTop: -bugConfig.hitPad / 2,
-
-                          boxShadow: `0 0 24px ${bug.color}55, 0 4px 12px rgba(0,0,0,0.2)`,
-
-                        }}
-
-                        aria-label={`Squash ${bug.emoji} bug`}
-
-                      >
-
-                        <span
-
-                          className="pointer-events-none text-2xl sm:text-3xl"
-
-                          style={{
-
-                            transform: `rotate(${Math.sin(bug.wiggle * 0.08) * 12}deg)`,
-
-                          }}
-
-                          aria-hidden
-
-                        >
-
-                          {bug.emoji}
-
-                        </span>
-
-                      </motion.button>
-
-                    ))}
+                    <BugSprites
+                      bugs={bugs}
+                      hitPad={bugConfig.hitPad}
+                      nodeRefsRef={bugNodeRefs}
+                    />
 
 
 
@@ -1839,17 +1731,14 @@ export default function BugGame() {
 
 
 
-            <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-
+            {gameState === "playing" && (
+            <p className="mt-2 shrink-0 text-center text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
               <Crosshair className="mr-1 inline h-4 w-4 align-text-bottom text-purple-500" aria-hidden />
-
               Tip: Bugs bounce off the edges — chain squashes for combo bonus points!
-
             </p>
+            )}
 
           </div>
-
-        </div>
 
       </div>
 

@@ -5,7 +5,6 @@ import { FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { SiNextdotjs, SiNodedotjs, SiReact, SiTailwindcss, SiTypescript } from "react-icons/si";
 import { PERSONAL_INFO } from "@/lib/constants";
 import { useGSAP } from "@/hooks/useGSAP";
-import HeroCanvas from "./HeroCanvas";
 import Logo from "./Logo";
 
 const TypingSubtitle = ({ texts }) => {
@@ -200,16 +199,12 @@ const Hero3D = () => {
   return (
     <section id="home" ref={scopeRef} className="relative hero-viewport__inner">
       <div className="relative flex h-full min-h-0 w-full items-stretch">
-          <div className="absolute inset-0 z-1 pointer-events-none">
-            <HeroCanvas />
-          </div>
-
           <div className="relative z-20 mx-auto flex h-full min-h-0 w-full max-w-[1800px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6 xl:px-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-              className="hero-panel relative flex min-h-0 flex-1 flex-col rounded-xl sm:rounded-2xl lg:rounded-3xl border border-white/15 bg-linear-to-br from-white/9 via-white/4 to-transparent shadow-[0_8px_40px_rgba(15,23,42,0.06)] backdrop-blur-md backdrop-saturate-125 dark:border-white/10 dark:from-white/[0.07] dark:via-white/3 dark:to-transparent dark:shadow-[0_12px_48px_rgba(0,0,0,0.25)] dark:backdrop-blur-md"
+              className="hero-panel glass-hero relative flex min-h-0 flex-1 flex-col rounded-xl sm:rounded-2xl lg:rounded-3xl"
             >
               <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-purple-500/4 via-transparent to-cyan-500/6" />
               <div
@@ -228,7 +223,7 @@ const Hero3D = () => {
                       initial={{ x: -24, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.8 }}
-                      className="hero-badge inline-flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-white/6 px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 sm:text-sm"
+                      className="hero-badge glass-pill inline-flex w-fit items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 sm:text-sm"
                     >
                       <span className="animate-bounce text-base leading-none">👋</span> Hello, I&apos;m
                     </motion.div>
@@ -306,7 +301,7 @@ const Hero3D = () => {
                         onClick={() =>
                           document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
                         }
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/20 bg-white/4 px-5 py-3 font-space text-sm font-bold text-slate-900 transition-all hover:border-white/30 hover:bg-white/10 dark:text-white sm:w-auto sm:px-6 sm:text-base"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-white/15 glass-chip px-5 py-3 font-space text-sm font-bold text-slate-900 transition-all hover:border-white/25 dark:text-white sm:w-auto sm:px-6 sm:text-base"
                       >
                         Contact Me
                         <Mail size={18} className="sm:h-5 sm:w-5" />
@@ -358,7 +353,7 @@ const Hero3D = () => {
                         href={PERSONAL_INFO.github}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-purple-500/35 hover:text-purple-600 dark:text-white dark:hover:text-cyan-400"
+                        className="glass-chip flex h-10 w-10 items-center justify-center rounded-xl text-slate-800 transition-colors hover:border-purple-500/35 hover:text-purple-600 dark:text-white dark:hover:text-cyan-400"
                         aria-label="GitHub"
                       >
                         <FaGithub className="h-[18px] w-[18px]" />
@@ -367,7 +362,7 @@ const Hero3D = () => {
                         href={PERSONAL_INFO.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/6 text-slate-800 transition-colors hover:border-cyan-500/35 hover:text-cyan-600 dark:text-white dark:hover:text-cyan-400"
+                        className="glass-chip flex h-10 w-10 items-center justify-center rounded-xl text-slate-800 transition-colors hover:border-cyan-500/35 hover:text-cyan-600 dark:text-white dark:hover:text-cyan-400"
                         aria-label="LinkedIn"
                       >
                         <FaLinkedinIn className="h-[18px] w-[18px]" />

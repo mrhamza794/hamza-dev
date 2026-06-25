@@ -62,7 +62,7 @@ const SkillCard = ({ skill }) => {
       viewport={{ once: true, amount: 0.2 }}
       className="skill-card group perspective relative"
     >
-      <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6">
+      <div className="glass-card p-6 h-full transition-transform duration-500 transform-style-3d group-hover:rotate-x-6 group-hover:-rotate-y-6 rounded-2xl">
         <div className="flex items-center gap-4 mb-4 transform-translate-z-10">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500/20 to-cyan-500/20 ring-1 ring-white/10 dark:ring-white/5 [&_svg]:h-[22px] [&_svg]:w-[22px]">
             <skill.Icon className={skill.iconClass} aria-hidden />
@@ -125,8 +125,8 @@ const Skills = () => {
   }, []);
 
   return (
-    <section id="skills" ref={scopeRef} className="skill-pin-wrapper relative py-20 px-4 md:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section id="skills" ref={scopeRef} className="skill-pin-wrapper relative py-20">
+      <div className="home-container">
         <div className="flex flex-col items-center mb-16 text-center">
           <h2 className="text-4xl md:text-5xl font-bold font-space text-gradient mb-4">Technical Arsenal</h2>
           <div className="w-24 h-1 bg-linear-to-r from-purple-500 to-cyan-500 rounded-full" />

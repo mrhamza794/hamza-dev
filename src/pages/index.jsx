@@ -8,6 +8,7 @@ const Hero3D = dynamic(() => import("@/components/Hero3D"), {
   ssr: false,
   loading: () => <div className="hero-viewport w-full bg-linear-to-br from-slate-900 to-slate-950" />,
 });
+const HomeScrollScene = dynamic(() => import("@/components/HomeScrollScene"), { ssr: false });
 const About = dynamic(() => import("@/components/About"));
 const DeveloperStats = dynamic(() => import("@/components/DeveloperStats"));
 const Skills = dynamic(() => import("@/components/Skills"));
@@ -56,7 +57,9 @@ export default function Home() {
     <div className="relative min-h-screen">
       <Navigation />
 
-      <main className="overflow-x-clip">
+      <HomeScrollScene />
+
+      <main data-home-scroll className="overflow-x-clip">
         <div id="hero" className="hero-viewport">
           <Hero3D />
         </div>

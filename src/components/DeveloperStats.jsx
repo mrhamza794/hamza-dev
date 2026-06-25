@@ -22,7 +22,7 @@ function StatCard({ stat, index, active }) {
       className="group relative h-full"
     >
       <div
-        className={`glass-card relative flex h-full min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 p-6 text-center transition-all duration-500 light:border-slate-300/50 hover:-translate-y-3 hover:shadow-2xl sm:min-h-[280px] sm:p-8 ${stat.hoverShadow}`}
+        className={`glass-card glass-card--lg relative flex h-full min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-3xl p-6 text-center transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl sm:min-h-[280px] sm:p-8 ${stat.hoverShadow}`}
       >
         <div
           className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
@@ -206,7 +206,7 @@ export default function DeveloperStats() {
         <div className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/5 blur-[100px]" />
       </div>
 
-      <div className="relative mx-auto max-w-[1400px]">
+      <div className="home-container">
         <motion.header
           initial={{ opacity: 0, y: 28 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

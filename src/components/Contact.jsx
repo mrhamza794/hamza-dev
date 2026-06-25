@@ -12,7 +12,7 @@ const ContactCard = ({ icon: Icon, label, value, delay = 0 }) => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 light:bg-white/70 border border-white/10 light:border-slate-300/60 hover:border-cyan-500/50 transition-colors"
+    className="glass-chip flex items-center gap-4 p-4 rounded-2xl hover:border-cyan-500/50 transition-colors"
   >
     <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
       <Icon size={20} />
@@ -122,7 +122,7 @@ const Contact = () => {
       style={{ backgroundImage: theme === "light" ? lightBgImage : darkBgImage }}
       className="relative py-32 overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-8 z-10 relative">
+      <div className="home-container z-10 relative">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-8 items-center">
           
@@ -155,7 +155,7 @@ const Contact = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            className="glass-card p-8 md:p-12 rounded-[32px] border border-white/10 light:border-slate-300/60 shadow-2xl relative bg-black/20 light:bg-white/75 backdrop-blur-xl"
+            className="glass-card glass-card--lg glass-card--static p-8 md:p-12 rounded-[32px] shadow-2xl relative"
           >
             <motion.h3 variants={formHingeVariant} className="text-2xl font-bold font-space text-white light:text-slate-900! mb-8">
               Send a Message
@@ -190,7 +190,7 @@ const Contact = () => {
                   onInput={handleInputChange}
                   placeholder="Your Name"
                   disabled={!allowNewContacts}
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="glass-input w-full rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <User size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -206,7 +206,7 @@ const Contact = () => {
                   onInput={handleInputChange}
                   placeholder="Email Address"
                   disabled={!allowNewContacts}
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="glass-input w-full rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <Mail size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
@@ -222,7 +222,7 @@ const Contact = () => {
                   onInput={handleInputChange}
                   placeholder="Project details..."
                   disabled={!allowNewContacts}
-                  className="w-full bg-white/5 light:bg-white/80 border border-white/10 light:border-slate-300/60 rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="glass-input w-full rounded-xl px-5 py-4 pl-12 text-slate-200 light:text-slate-800! placeholder:text-slate-500 focus:outline-hidden focus:border-cyan-500/50 transition-colors resize-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <MessageSquare size={20} className="absolute left-4 top-4 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
               </motion.div>
