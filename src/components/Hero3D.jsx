@@ -200,7 +200,7 @@ const Hero3D = () => {
             <HeroCanvas />
           </div>
 
-          <div className="relative z-20 isolate mx-auto flex h-full min-h-0 w-full max-w-[1800px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6 xl:px-12">
+          <div className="relative z-20 mx-auto flex h-full min-h-0 w-full max-w-[1800px] px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-6 xl:px-12">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -311,10 +311,12 @@ const Hero3D = () => {
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8 }}
-                    className="hero-visual hero-logo-panel logo-backdrop-panel relative min-h-32 w-full flex-1 overflow-hidden rounded-2xl bg-transparent sm:min-h-40 lg:min-h-48 lg:rounded-2xl"
+                    className="hero-visual hero-profile-frame relative min-h-32 w-full flex-1 rounded-2xl sm:min-h-40 lg:min-h-48 lg:rounded-2xl"
                     style={{ transformStyle: "preserve-3d" }}
                   >
-                    <Logo variant="backdrop" clickable={false} />
+                    <div className="logo-backdrop-panel hero-logo-panel absolute inset-0 overflow-visible rounded-2xl bg-transparent lg:rounded-2xl">
+                      <Logo variant="backdrop" clickable={false} />
+                    </div>
                   </motion.div>
 
                   <div className="hero-side-meta flex flex-col">

@@ -304,7 +304,7 @@ html.admin-route.dark body {
 }
 
 @media (max-height: 680px) and (max-width: 1023px) {
-  .hero-viewport .hero-logo-panel {
+  .hero-viewport .hero-visual {
     display: none;
   }
 
@@ -468,6 +468,27 @@ footer .glass-card:hover {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  isolation: auto;
+}
+
+/* Dark: bridge baked-in logo PNG bg → page tones so the square edge disappears */
+.dark .logo-backdrop-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 88% 84% at 50% 44%,
+    rgb(14 12 32 / 0.98) 0%,
+    rgb(10 14 28 / 0.72) 42%,
+    rgb(6 10 22 / 0.28) 62%,
+    transparent 76%
+  );
+}
+
+.logo-backdrop-panel .logo-backdrop-wrap {
+  z-index: 1;
 }
 
 /* Full-area logos — melt into whatever is behind (no box, no shadow) */
@@ -501,14 +522,52 @@ footer .glass-card:hover {
 }
 
 .dark .logo-blend {
-  mix-blend-mode: lighten;
-  opacity: 0.55;
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  filter: contrast(1.1) saturate(1.14) brightness(1.04);
+}
+
+/* Hero + About: softer blend, no top crop (logo panels use overflow-visible) */
+.dark .about-logo-panel .logo-blend,
+.dark .hero-logo-panel .logo-blend {
+  mix-blend-mode: soft-light;
+  opacity: 0.72;
+  transform: scale(1.05);
+  filter: contrast(1.08) saturate(1.12) brightness(1.02);
+  -webkit-mask-image: radial-gradient(
+    ellipse 92% 88% at 50% 40%,
+    #000 4%,
+    rgba(0, 0, 0, 0.9) 40%,
+    rgba(0, 0, 0, 0.35) 62%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    ellipse 92% 88% at 50% 40%,
+    #000 4%,
+    rgba(0, 0, 0, 0.9) 40%,
+    rgba(0, 0, 0, 0.35) 62%,
+    transparent 78%
+  );
+}
+
+.dark .about-logo-panel::before,
+.dark .hero-logo-panel::before {
+  display: none;
+}
+
+.hero-profile-frame,
+.about-profile-frame {
+  isolation: auto;
+}
+
+.light .about-logo-panel .logo-blend,
+.light .hero-logo-panel .logo-blend {
+  transform: scale(1.08);
 }
 
 @supports (mix-blend-mode: plus-lighter) {
   .dark .logo-blend {
-    mix-blend-mode: plus-lighter;
-    opacity: 0.5;
+    mix-blend-mode: screen;
   }
 }
 
@@ -518,10 +577,15 @@ footer .glass-card:hover {
   filter: contrast(1.05) saturate(1.05);
 }
 
-/* Let backdrop logos blend through glass panels */
+/* Let backdrop logos blend through glass panels — no isolation on hosts */
 .hero-panel .logo-backdrop-panel,
 #about .logo-backdrop-panel,
 .logo-footer-panel {
+  isolation: auto;
+}
+
+.dark .hero-panel,
+.dark #about .logo-backdrop-panel {
   isolation: auto;
 }
 

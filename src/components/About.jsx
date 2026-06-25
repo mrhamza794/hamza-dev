@@ -133,9 +133,11 @@ const About = () => {
         <div className="grid grid-cols-1 items-start gap-20 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           {/* Left: Profile Visual — CSS sticky on desktop (no GSAP pin = no fixed-width overflow) */}
           <div className="about-sticky-visual relative min-w-0 w-full lg:sticky lg:top-28 lg:self-start">
-            <div className="logo-backdrop-panel relative aspect-square w-full min-h-[280px] overflow-hidden rounded-[2.5rem] bg-transparent">
-              <Logo variant="backdrop" clickable={false} />
-              <div className="logo-text-scrim" aria-hidden />
+            <div className="about-profile-frame relative aspect-square w-full min-h-[280px] rounded-[2.5rem]">
+              <div className="logo-backdrop-panel about-logo-panel absolute inset-0 overflow-visible rounded-[2.5rem] bg-transparent">
+                <Logo variant="backdrop" clickable={false} />
+              </div>
+              <div className="logo-text-scrim pointer-events-none absolute inset-x-0 bottom-0 z-1 rounded-b-[2.5rem]" aria-hidden />
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}

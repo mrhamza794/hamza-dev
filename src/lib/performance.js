@@ -33,10 +33,6 @@ export function getPerformanceTier() {
   return PERF_TIERS.MEDIUM;
 }
 
-export function shouldUseScrollProgress(tier) {
-  return tier === PERF_TIERS.HIGH;
-}
-
 export function shouldUseCustomCursor(tier) {
   if (typeof window === "undefined") return false;
   return tier === PERF_TIERS.HIGH && window.matchMedia("(pointer: fine)").matches;
