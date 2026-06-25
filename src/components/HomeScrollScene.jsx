@@ -293,26 +293,17 @@ const MorphingSwarm = ({ progressRef, particleCount, isLight }) => {
       groupRef.current.rotation.y += delta * (0.028 + Math.abs(scrollVelocity) * 0.015);
       groupRef.current.rotation.x = THREE.MathUtils.lerp(
         groupRef.current.rotation.x,
-        progress * 0.5 - 0.12,
+        progress * 0.35 - 0.08,
         0.05
       );
       groupRef.current.rotation.z = THREE.MathUtils.lerp(
         groupRef.current.rotation.z,
-        Math.sin(progress * Math.PI) * 0.08,
+        Math.sin(progress * Math.PI) * 0.05,
         0.04
       );
-      groupRef.current.position.x = THREE.MathUtils.lerp(
-        groupRef.current.position.x,
-        (progress - 0.5) * 1.1,
-        0.05
-      );
-      groupRef.current.position.y = THREE.MathUtils.lerp(
-        groupRef.current.position.y,
-        (0.5 - progress) * 0.4,
-        0.05
-      );
+      groupRef.current.position.set(0, 0, 0);
       groupRef.current.scale.setScalar(
-        THREE.MathUtils.lerp(groupRef.current.scale.x, 0.92 + Math.sin(progress * Math.PI) * 0.08, 0.04)
+        THREE.MathUtils.lerp(groupRef.current.scale.x, 1, 0.04)
       );
     }
   });
@@ -322,11 +313,11 @@ const MorphingSwarm = ({ progressRef, particleCount, isLight }) => {
       <points ref={pointsRef} geometry={geometry}>
         <pointsMaterial
           map={particleTexture ?? undefined}
-          size={isLight ? 0.045 : 0.052}
+          size={isLight ? 0.12 : 0.14}
           sizeAttenuation
           vertexColors
           transparent
-          opacity={isLight ? 0.72 : 0.92}
+          opacity={isLight ? 0.82 : 0.96}
           depthWrite={false}
           blending={isLight ? THREE.NormalBlending : THREE.AdditiveBlending}
           toneMapped={false}
@@ -394,8 +385,9 @@ const ScrollCamera = ({ progressRef }) => {
 
   useFrame(() => {
     const p = progressRef.current;
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, 5.5 - p * 0.6, 0.04);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, p * 0.25, 0.04);
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, 0.05);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.05);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, 5.5 - p * 0.35, 0.04);
     camera.lookAt(0, 0, 0);
   });
 
@@ -421,9 +413,9 @@ const HomeScrollScene = () => {
       }
 
       setShouldRender(true);
-      const isMobile = window.innerWidth < 768;
-      setParticleCount(isMobile ? 380 : 900);
-      setAmbientCount(isMobile ? 14 : 28);
+      const mobile = window.innerWidth < 768;
+      setParticleCount(mobile ? 380 : 900);
+      setAmbientCount(mobile ? 14 : 28);
     };
 
     window.addEventListener("resize", handleResize);

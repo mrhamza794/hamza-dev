@@ -64,16 +64,16 @@
   --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   --secondary-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
   
-  --glass-bg: rgba(255, 255, 255, 0.12);
-  --glass-bg-hover: rgba(255, 255, 255, 0.16);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-blur-amount: 20px;
-  --glass-section-blur-amount: 24px;
-  --glass-saturate: 125%;
-  --glass-section-bg: rgba(255, 255, 255, 0.09);
-  --glass-input-bg: rgba(255, 255, 255, 0.12);
+  --glass-bg: rgba(15, 23, 42, 0.62);
+  --glass-bg-hover: rgba(15, 23, 42, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-blur-amount: 32px;
+  --glass-section-blur-amount: 40px;
+  --glass-saturate: 130%;
+  --glass-section-bg: rgba(15, 23, 42, 0.48);
+  --glass-input-bg: rgba(15, 23, 42, 0.55);
   --glass-blur: blur(var(--glass-blur-amount)) saturate(var(--glass-saturate));
-  --glass-shadow: 0 8px 28px rgba(2, 6, 23, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(2, 6, 23, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --glass-radius: 1rem;
   --glass-radius-lg: 1.25rem;
 }
@@ -82,12 +82,12 @@
   --bg-gradient: linear-gradient(180deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%);
   --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #0891b2 100%);
   --secondary-gradient: linear-gradient(135deg, #cffafe 0%, #e0e7ff 100%);
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-hover: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(148, 163, 184, 0.42);
-  --glass-section-bg: rgba(255, 255, 255, 0.24);
-  --glass-input-bg: rgba(255, 255, 255, 0.75);
-  --glass-shadow: 0 8px 28px rgba(148, 163, 184, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-bg-hover: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(148, 163, 184, 0.45);
+  --glass-section-bg: rgba(255, 255, 255, 0.45);
+  --glass-input-bg: rgba(255, 255, 255, 0.92);
+  --glass-shadow: 0 8px 32px rgba(148, 163, 184, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.85);
   --color-text-primary: #0f172a;
   --color-text-secondary: #1e293b;
   --color-text-muted: #475569;
@@ -298,9 +298,9 @@ html.admin-route.dark body {
   .glass-hero {
     background: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.06) 100%
+      rgba(15, 23, 42, 0.58) 0%,
+      rgba(15, 23, 42, 0.48) 50%,
+      rgba(15, 23, 42, 0.4) 100%
     );
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -440,9 +440,9 @@ html.admin-route.dark body {
 .light .glass-hero {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.82) 0%,
-    rgba(255, 255, 255, 0.62) 50%,
-    rgba(255, 255, 255, 0.42) 100%
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0.82) 50%,
+    rgba(255, 255, 255, 0.72) 100%
   );
 }
 
