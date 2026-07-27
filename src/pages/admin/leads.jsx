@@ -23,6 +23,7 @@ import {
   prepareTemplatesForModal,
 } from "@/lib/leadEmailTemplates";
 import SearchableSelect from "@/components/admin/SearchableSelect";
+import DeleteConfirmModal from "@/components/admin/DeleteConfirmModal";
 
 const TABS = ["Search", "Saved leads"];
 const EMAIL_BATCH_SIZE = 25;
@@ -67,6 +68,7 @@ export default function LeadsPage() {
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
   const [savedSelectedIds, setSavedSelectedIds] = useState(new Set());
+  const [deleteModal, setDeleteModal] = useState(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailSendIds, setEmailSendIds] = useState([]);
   const [emailPreviewLeads, setEmailPreviewLeads] = useState([]);
@@ -483,15 +485,29 @@ export default function LeadsPage() {
     fetchSaved();
   };
 
-  const deleteLead = async (id) => {
-    await fetch(`/api/admin/osm/leads/${id}`, {
-      method: "DELETE",
-      credentials: "include",
+  const openDeleteOneLead = (lead) => {
+    setDeleteModal({
+      mode: "one",
+      ids: [lead._id],
+      title: "Delete lead",
+      description: `Delete “${lead.companyName}”? This cannot be undone.`,
+      confirmLabel: "Delete",
     });
-    fetchSaved();
   };
 
-  const deleteAllSavedLeads = async () => {
+  const openBulkDeleteLeads = () => {
+    if (savedSelectedIds.size > 0) {
+      const count = savedSelectedIds.size;
+      setDeleteModal({
+        mode: "selected",
+        ids: [...savedSelectedIds],
+        title: "Delete selected leads",
+        description: `Delete ${count} selected lead${count === 1 ? "" : "s"}? This cannot be undone.`,
+        confirmLabel: `Delete selected (${count})`,
+      });
+      return;
+    }
+
     const total = savedData?.total ?? 0;
     if (total === 0) return;
 
@@ -500,33 +516,78 @@ export default function LeadsPage() {
         ? `all ${total} saved lead(s)`
         : `${total} filtered lead(s)`;
 
-    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+    setDeleteModal({
+      mode: "all",
+      ids: [],
+      title: "Delete leads",
+      description: `Delete ${label}? This cannot be undone.`,
+      confirmLabel: `Delete all (${total})`,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteAllLoading) return;
+    setDeleteModal(null);
+  };
+
+  const confirmDeleteLeads = async () => {
+    if (!deleteModal) return;
 
     setDeleteAllLoading(true);
     setSavedMsg("");
     try {
-      const params = new URLSearchParams();
-      const hasFilters = savedFilter.status || savedFilter.hasWebsite || savedFilter.q;
-      if (!hasFilters) {
-        params.set("all", "1");
+      if (deleteModal.mode === "one") {
+        const id = deleteModal.ids[0];
+        const res = await fetch(`/api/admin/osm/leads/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Delete failed");
+        setSavedMsg("Lead deleted");
+        setSavedSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else if (deleteModal.mode === "selected") {
+        const res = await fetch("/api/admin/osm/leads", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: deleteModal.ids }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Delete failed");
+        setSavedMsg(data.message || "Leads deleted");
+        setSavedSelectedIds(new Set());
       } else {
-        if (savedFilter.status) params.set("status", savedFilter.status);
-        if (savedFilter.hasWebsite) params.set("hasWebsite", savedFilter.hasWebsite);
-        if (savedFilter.q) params.set("q", savedFilter.q);
+        const params = new URLSearchParams();
+        const hasFilters = savedFilter.status || savedFilter.hasWebsite || savedFilter.q;
+        if (!hasFilters) {
+          params.set("all", "1");
+        } else {
+          if (savedFilter.status) params.set("status", savedFilter.status);
+          if (savedFilter.hasWebsite) params.set("hasWebsite", savedFilter.hasWebsite);
+          if (savedFilter.q) params.set("q", savedFilter.q);
+        }
+
+        const res = await fetch(`/api/admin/osm/leads?${params}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Delete failed");
+        setSavedMsg(data.message || "All leads deleted");
+        setSavedSelectedIds(new Set());
+        setSavedPage(1);
       }
 
-      const res = await fetch(`/api/admin/osm/leads?${params}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Delete failed");
-
-      setSavedMsg(data.message || "All leads deleted");
-      setSavedPage(1);
+      setDeleteModal(null);
       fetchSaved();
     } catch (err) {
       setSavedMsg(err instanceof Error ? err.message : "Delete failed");
+      setDeleteModal(null);
     } finally {
       setDeleteAllLoading(false);
     }
@@ -885,8 +946,10 @@ export default function LeadsPage() {
               </select>
               <button
                 type="button"
-                onClick={deleteAllSavedLeads}
-                disabled={deleteAllLoading || !savedData?.total}
+                onClick={openBulkDeleteLeads}
+                disabled={
+                  deleteAllLoading || (savedSelectedIds.size === 0 && !savedData?.total)
+                }
                 className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
               >
                 {deleteAllLoading ? (
@@ -894,7 +957,9 @@ export default function LeadsPage() {
                 ) : (
                   <Trash2 size={14} />
                 )}
-                Delete all{savedData?.total ? ` (${savedData.total})` : ""}
+                {savedSelectedIds.size > 0
+                  ? `Delete selected (${savedSelectedIds.size})`
+                  : `Delete all${savedData?.total ? ` (${savedData.total})` : ""}`}
               </button>
             </div>
 
@@ -1200,7 +1265,7 @@ export default function LeadsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => deleteLead(lead._id)}
+                            onClick={() => openDeleteOneLead(lead)}
                             className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                             aria-label="Delete lead"
                           >
@@ -1247,6 +1312,16 @@ export default function LeadsPage() {
           )}
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={Boolean(deleteModal)}
+        title={deleteModal?.title}
+        description={deleteModal?.description}
+        confirmLabel={deleteModal?.confirmLabel}
+        loading={deleteAllLoading}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDeleteLeads}
+      />
     </div>
   );
 }

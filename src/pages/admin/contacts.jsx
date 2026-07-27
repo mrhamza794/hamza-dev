@@ -7,7 +7,10 @@ import {
   Trash2,
   Mail,
   RefreshCw,
+  CheckSquare,
+  Square,
 } from "lucide-react";
+import DeleteConfirmModal from "@/components/admin/DeleteConfirmModal";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -24,7 +27,9 @@ export default function ContactsPage() {
   const [searchDraft, setSearchDraft] = useState("");
   const [query, setQuery] = useState("");
   const [msg, setMsg] = useState("");
-  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [deleteModal, setDeleteModal] = useState(null);
   const searchTimer = useRef(null);
 
   const fetchContacts = useCallback(async () => {
@@ -51,52 +56,138 @@ export default function ContactsPage() {
     fetchContacts();
   }, [fetchContacts]);
 
-  const deleteContact = async (id) => {
-    if (!window.confirm("Delete this contact message?")) return;
-    setMsg("");
-    try {
-      const res = await fetch(`/api/admin/contacts/${id}`, {
-        method: "DELETE",
-        credentials: "include",
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, query]);
+
+  const pageIds = (data?.items || []).map((c) => c._id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const selectedCount = selectedIds.size;
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!pageIds.length) return;
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageIds.forEach((id) => next.delete(id));
+        return next;
       });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Delete failed");
-      setMsg("Contact deleted");
-      fetchContacts();
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Delete failed");
+    } else {
+      setSelectedIds((prev) => new Set([...prev, ...pageIds]));
     }
   };
 
-  const deleteAllContacts = async () => {
+  const openDeleteOne = (contact) => {
+    setDeleteModal({
+      mode: "one",
+      ids: [contact._id],
+      title: "Delete contact",
+      description: `Delete the message from ${contact.name}? This cannot be undone.`,
+      confirmLabel: "Delete",
+    });
+  };
+
+  const openBulkDelete = () => {
+    if (selectedCount > 0) {
+      setDeleteModal({
+        mode: "selected",
+        ids: [...selectedIds],
+        title: "Delete selected contacts",
+        description: `Delete ${selectedCount} selected contact message${selectedCount === 1 ? "" : "s"}? This cannot be undone.`,
+        confirmLabel: `Delete selected (${selectedCount})`,
+      });
+      return;
+    }
+
     const total = data?.total ?? 0;
     if (total === 0) return;
 
     const label = query ? `${total} filtered contact(s)` : `all ${total} contact(s)`;
-    if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+    setDeleteModal({
+      mode: "all",
+      ids: [],
+      title: "Delete contacts",
+      description: `Delete ${label}? This cannot be undone.`,
+      confirmLabel: `Delete all (${total})`,
+    });
+  };
 
-    setDeleteAllLoading(true);
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setDeleteModal(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
+
+    setDeleteLoading(true);
     setMsg("");
     try {
-      const params = new URLSearchParams();
-      if (!query) params.set("all", "1");
-      else params.set("q", query);
+      if (deleteModal.mode === "one") {
+        const id = deleteModal.ids[0];
+        const res = await fetch(`/api/admin/contacts/${id}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || "Delete failed");
+        setMsg("Contact deleted");
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else if (deleteModal.mode === "selected") {
+        const res = await fetch("/api/admin/contacts", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: deleteModal.ids }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || "Delete failed");
+        setMsg(json.message || "Contacts deleted");
+        setSelectedIds(new Set());
+      } else {
+        const params = new URLSearchParams();
+        if (!query) params.set("all", "1");
+        else params.set("q", query);
 
-      const res = await fetch(`/api/admin/contacts?${params}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Delete failed");
-      setMsg(json.message || "Contacts deleted");
-      setPage(1);
+        const res = await fetch(`/api/admin/contacts?${params}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || "Delete failed");
+        setMsg(json.message || "Contacts deleted");
+        setSelectedIds(new Set());
+        setPage(1);
+      }
+
+      setDeleteModal(null);
       fetchContacts();
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Delete failed");
+      setDeleteModal(null);
     } finally {
-      setDeleteAllLoading(false);
+      setDeleteLoading(false);
     }
   };
+
+  const bulkDisabled = deleteLoading || (selectedCount === 0 && !data?.total);
+  const bulkLabel =
+    selectedCount > 0
+      ? `Delete selected (${selectedCount})`
+      : `Delete all${data?.total ? ` (${data.total})` : ""}`;
 
   return (
     <div className="min-w-0 max-w-full space-y-6 overflow-x-hidden">
@@ -120,16 +211,16 @@ export default function ContactsPage() {
           </button>
           <button
             type="button"
-            onClick={deleteAllContacts}
-            disabled={deleteAllLoading || !data?.total}
+            onClick={openBulkDelete}
+            disabled={bulkDisabled}
             className="flex items-center gap-1 rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
           >
-            {deleteAllLoading ? (
+            {deleteLoading ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Trash2 size={14} />
             )}
-            Delete all{data?.total ? ` (${data.total})` : ""}
+            {bulkLabel}
           </button>
         </div>
 
@@ -176,6 +267,16 @@ export default function ContactsPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-white/10">
+                  <th className="p-3 w-10">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAll}
+                      className="text-slate-400"
+                      aria-label="Select all on page"
+                    >
+                      {allPageSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </button>
+                  </th>
                   <th className="p-3 font-medium">Date</th>
                   <th className="p-3 font-medium">Name</th>
                   <th className="p-3 font-medium">Email</th>
@@ -189,6 +290,19 @@ export default function ContactsPage() {
                 {data?.items?.length ? (
                   data.items.map((contact) => (
                     <tr key={contact._id} className="border-b border-slate-100 dark:border-white/5">
+                      <td className="p-3">
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(contact._id)}
+                          aria-label={`Select ${contact.name}`}
+                        >
+                          {selectedIds.has(contact._id) ? (
+                            <CheckSquare size={16} className="text-purple-500" />
+                          ) : (
+                            <Square size={16} className="text-slate-400" />
+                          )}
+                        </button>
+                      </td>
                       <td className="p-3 admin-text-muted whitespace-nowrap text-xs">
                         {formatDate(contact.createdAt || contact.submittedAt)}
                       </td>
@@ -223,7 +337,7 @@ export default function ContactsPage() {
                           </a>
                           <button
                             type="button"
-                            onClick={() => deleteContact(contact._id)}
+                            onClick={() => openDeleteOne(contact)}
                             className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
                             aria-label="Delete contact"
                           >
@@ -235,7 +349,7 @@ export default function ContactsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center admin-text-muted">
+                    <td colSpan={8} className="p-8 text-center admin-text-muted">
                       No contact messages yet.
                     </td>
                   </tr>
@@ -269,6 +383,16 @@ export default function ContactsPage() {
           )}
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={Boolean(deleteModal)}
+        title={deleteModal?.title}
+        description={deleteModal?.description}
+        confirmLabel={deleteModal?.confirmLabel}
+        loading={deleteLoading}
+        onClose={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

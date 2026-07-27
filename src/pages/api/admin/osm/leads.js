@@ -171,8 +171,22 @@ async function handlePost(req, res) {
 async function handleDelete(req, res) {
   await connectDB();
 
-  const deleteAll = req.query.all === "1" || req.query.all === "true";
-  const filter = deleteAll ? {} : buildListFilter(req.query);
+  let body = {};
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    return sendJson(res, 400, { success: false, error: "Invalid JSON body" });
+  }
+
+  const ids = Array.isArray(body?.ids) ? body.ids.filter(Boolean) : [];
+  let filter;
+
+  if (ids.length > 0) {
+    filter = { _id: { $in: ids } };
+  } else {
+    const deleteAll = req.query.all === "1" || req.query.all === "true";
+    filter = deleteAll ? {} : buildListFilter(req.query);
+  }
 
   const count = await OsmLead.countDocuments(filter);
   if (count === 0) {
