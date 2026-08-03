@@ -12,7 +12,6 @@ import {
 import { queryTileFilterSets } from "@/lib/osm/overpass";
 import { normalizeOsmElement, filterPois } from "@/lib/osm/normalizePoi";
 
-const TICK_BUDGET_MS = 22_000;
 const CHUNK_SIZE = 1;
 
 const JOB_SELECT = "-results -seenKeys";
@@ -131,8 +130,19 @@ export async function jobToClient(job) {
   // but fall back to stored docs if something odd strips fields on read.
   const filtered = filterPois(items);
   const leads = filtered.length > 0 ? filtered : items.filter((poi) => poi?.email || poi?.companyName);
+  const ratio = job.totalSteps > 0 ? (job.completedSteps / job.totalSteps) * 100 : 0;
+  // Keep sub-1% visible so large city scans don't look stuck at 0
   const progress =
-    job.totalSteps > 0 ? Math.round((job.completedSteps / job.totalSteps) * 100) : 0;
+    job.totalSteps > 0
+      ? ratio > 0 && ratio < 1
+        ? Math.round(ratio * 10) / 10
+        : Math.round(ratio)
+      : 0;
+
+  const currentFilters = job.filterSets?.[job.filterIndex];
+  const currentFilterLabel = Array.isArray(currentFilters)
+    ? currentFilters.map((f) => (f.value == null ? f.key : `${f.key}=${f.value}`)).join(", ")
+    : null;
 
   return {
     id: String(jobId || job._id || job.id),
@@ -151,6 +161,7 @@ export async function jobToClient(job) {
     tileIndex: job.tileIndex,
     tileCount: job.tiles?.length || 0,
     currentStep: job.completedSteps + 1,
+    currentFilterLabel,
   };
 }
 
@@ -165,12 +176,26 @@ async function processOneChunk(job) {
     return job;
   }
 
+  // Bail if another request cancelled this job while we were waiting.
+  const fresh = await OsmSearchJob.findById(job._id).select("status").lean();
+  if (!fresh || fresh.status === "cancelled") {
+    job.status = "cancelled";
+    return job;
+  }
+
   const tile = tiles[job.tileIndex];
   const chunk = filterSets.slice(job.filterIndex, job.filterIndex + chunkSize);
   const meta = buildMeta(job);
 
   try {
     const elements = await queryTileFilterSets(tile, chunk);
+
+    const cancelledDuringQuery = await OsmSearchJob.findById(job._id).select("status").lean();
+    if (!cancelledDuringQuery || cancelledDuringQuery.status === "cancelled") {
+      job.status = "cancelled";
+      return job;
+    }
+
     job.rawCount += elements.length;
 
     const pois = [];
@@ -187,6 +212,12 @@ async function processOneChunk(job) {
     console.warn("Job chunk skipped:", err.message);
   }
 
+  const stillActive = await OsmSearchJob.findById(job._id).select("status").lean();
+  if (!stillActive || stillActive.status === "cancelled") {
+    job.status = "cancelled";
+    return job;
+  }
+
   job.filterIndex += chunkSize;
   if (job.filterIndex >= filterSets.length) {
     job.tileIndex += 1;
@@ -199,7 +230,29 @@ async function processOneChunk(job) {
     job.status = "complete";
   }
 
-  await job.save();
+  // Atomic write that won't revive a cancelled job
+  const updated = await OsmSearchJob.findOneAndUpdate(
+    { _id: job._id, status: { $ne: "cancelled" } },
+    {
+      $set: {
+        tileIndex: job.tileIndex,
+        filterIndex: job.filterIndex,
+        completedSteps: job.completedSteps,
+        rawCount: job.rawCount,
+        matchedCount: job.matchedCount,
+        status: job.status === "complete" ? "complete" : "running",
+        error: job.error,
+      },
+    },
+    { new: true, select: JOB_SELECT }
+  );
+
+  if (!updated) {
+    job.status = "cancelled";
+    return job;
+  }
+
+  Object.assign(job, updated.toObject());
   return job;
 }
 
@@ -220,15 +273,19 @@ export async function tickSearchJob(jobId) {
   }
 
   job.status = "running";
+  await job.save();
 
   try {
-    const deadline = Date.now() + TICK_BUDGET_MS;
-
-    while (Date.now() < deadline && job.tileIndex < job.tiles.length) {
+    // One chunk per tick so the UI can update between Overpass calls.
+    if (job.tileIndex < job.tiles.length) {
       await processOneChunk(job);
-      if (job.status === "complete") break;
     }
   } catch (err) {
+    const latest = await OsmSearchJob.findById(jobId).select("status").lean();
+    if (latest?.status === "cancelled") {
+      job.status = "cancelled";
+      return job;
+    }
     job.status = "failed";
     job.error = err.message || "Search failed";
     await job.save();
@@ -246,12 +303,12 @@ export async function getSearchJob(jobId) {
 
 export async function cancelSearchJob(jobId) {
   await connectDB();
-  const job = await OsmSearchJob.findById(jobId).select(JOB_SELECT);
+  const job = await OsmSearchJob.findByIdAndUpdate(
+    jobId,
+    { $set: { status: "cancelled" } },
+    { new: true }
+  ).select(JOB_SELECT);
   if (!job) throw new Error("Search job not found");
-  if (job.status === "running") {
-    job.status = "cancelled";
-    await job.save();
-  }
   return job;
 }
 

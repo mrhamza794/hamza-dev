@@ -64,6 +64,29 @@ function isResumableJob(job) {
   return Boolean(job?.id && job.status === "running");
 }
 
+async function readApiJson(res) {
+  const text = await res.text();
+  if (!text) {
+    throw new Error(res.ok ? "Empty response from server" : `Request failed (${res.status})`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      res.status === 404
+        ? "Search API route not found. Refresh the page and try again."
+        : `Server returned a non-JSON response (${res.status}). Search interrupted.`
+    );
+  }
+}
+
+function jobTickUrl(jobId, action) {
+  const params = new URLSearchParams({ id: jobId });
+  if (action) params.set("action", action);
+  return `/api/admin/osm/jobs?${params}`;
+}
+
 export default function LeadsPage() {
   const [activeTab, setActiveTab] = useState("Search");
 
@@ -85,6 +108,7 @@ export default function LeadsPage() {
   const [saveMsg, setSaveMsg] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
   const [resumableJobId, setResumableJobId] = useState(null);
+  const [searchElapsedSec, setSearchElapsedSec] = useState(0);
 
   // Saved leads state
   const [savedData, setSavedData] = useState(null);
@@ -110,10 +134,23 @@ export default function LeadsPage() {
   const activeJobIdRef = useRef(null);
   const prevJobIdRef = useRef(null);
   const allResultsRef = useRef([]);
+  const tickAbortControllerRef = useRef(null);
 
   useEffect(() => {
     allResultsRef.current = allResults;
   }, [allResults]);
+
+  useEffect(() => {
+    if (!searchLoading) {
+      setSearchElapsedSec(0);
+      return undefined;
+    }
+    const started = Date.now();
+    const timer = setInterval(() => {
+      setSearchElapsedSec(Math.floor((Date.now() - started) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [searchLoading]);
 
   const leadKey = (lead) => `${lead.osmType}-${lead.osmId}`;
 
@@ -212,24 +249,42 @@ export default function LeadsPage() {
       applyJobToUi(job);
 
       while (job.status === "running" && !searchAbortRef.current) {
-        const tickRes = await fetch(`/api/admin/osm/jobs/${jobId}`, {
-          method: "POST",
-          credentials: "include",
-        });
-        const tickData = await tickRes.json();
-        if (!tickData.success) throw new Error(tickData.error || "Search step failed");
+        const controller = new AbortController();
+        tickAbortControllerRef.current = controller;
 
-        job = tickData.data;
-        applyJobToUi(job);
+        try {
+          const tickRes = await fetch(jobTickUrl(jobId), {
+            method: "POST",
+            credentials: "include",
+            signal: controller.signal,
+          });
+          const tickData = await readApiJson(tickRes);
+          if (!tickData.success) throw new Error(tickData.error || "Search step failed");
 
-        if (isTerminalJobStatus(job.status)) break;
+          job = tickData.data;
+          if (searchAbortRef.current) break;
+          applyJobToUi(job);
+
+          if (isTerminalJobStatus(job.status)) break;
+        } catch (err) {
+          if (err?.name === "AbortError" || searchAbortRef.current) break;
+          throw err;
+        } finally {
+          if (tickAbortControllerRef.current === controller) {
+            tickAbortControllerRef.current = null;
+          }
+        }
       }
 
       if (searchAbortRef.current && jobId) {
-        await fetch(`/api/admin/osm/jobs/${jobId}?action=cancel`, {
-          method: "POST",
-          credentials: "include",
-        });
+        try {
+          await fetch(jobTickUrl(jobId, "cancel"), {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch {
+          /* best-effort */
+        }
         clearPersistedJob();
         setSearchError("Search cancelled.");
         return job;
@@ -269,10 +324,10 @@ export default function LeadsPage() {
       setResumableJobId(null);
 
       try {
-        const getRes = await fetch(`/api/admin/osm/jobs/${jobId}`, {
+        const getRes = await fetch(jobTickUrl(jobId), {
           credentials: "include",
         });
-        const getData = await getRes.json();
+        const getData = await readApiJson(getRes);
         if (!getData.success) throw new Error(getData.error || "Could not load search job");
 
         const job = getData.data;
@@ -340,7 +395,7 @@ export default function LeadsPage() {
     const previousJobId = readStoredJobId();
     if (previousJobId) {
       try {
-        await fetch(`/api/admin/osm/jobs/${previousJobId}?action=cancel`, {
+        await fetch(jobTickUrl(previousJobId, "cancel"), {
           method: "POST",
           credentials: "include",
         });
@@ -368,7 +423,7 @@ export default function LeadsPage() {
           city: selectedPlace.city,
         }),
       });
-      const createData = await createRes.json();
+      const createData = await readApiJson(createRes);
       if (!createData.success) throw new Error(createData.error || "Search failed to start");
 
       const job = createData.data;
@@ -399,16 +454,21 @@ export default function LeadsPage() {
   }, [selectedPlace, businessTypeId, countryCode, tickJobUntilDone, clearPersistedJob, markJobInterrupted]);
 
   const cancelSearch = useCallback(async () => {
-    if (searchLoading) {
-      searchAbortRef.current = true;
+    const id = activeJobIdRef.current || resumableJobId || readStoredJobId();
+
+    searchAbortRef.current = true;
+    tickAbortControllerRef.current?.abort();
+    tickAbortControllerRef.current = null;
+
+    if (!id) {
+      setSearchLoading(false);
+      setSearchError("Search cancelled.");
       return;
     }
 
-    const id = resumableJobId || readStoredJobId();
-    if (!id) return;
-
+    // Cancel on the server immediately — don't wait for the in-flight Overpass tick.
     try {
-      await fetch(`/api/admin/osm/jobs/${id}?action=cancel`, {
+      await fetch(jobTickUrl(id, "cancel"), {
         method: "POST",
         credentials: "include",
       });
@@ -417,9 +477,9 @@ export default function LeadsPage() {
     }
 
     clearPersistedJob();
+    setSearchLoading(false);
     setSearchError("Search cancelled.");
-    setSearchProgress(null);
-  }, [searchLoading, resumableJobId, clearPersistedJob]);
+  }, [resumableJobId, clearPersistedJob]);
 
   useEffect(() => {
     let cancelled = false;
@@ -429,10 +489,10 @@ export default function LeadsPage() {
       if (!jobId) return;
 
       try {
-        const res = await fetch(`/api/admin/osm/jobs/${jobId}`, {
+        const res = await fetch(jobTickUrl(jobId), {
           credentials: "include",
         });
-        const data = await res.json();
+        const data = await readApiJson(res);
         if (cancelled) return;
 
         if (!data.success || !data.data) {
@@ -988,25 +1048,38 @@ export default function LeadsPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="admin-text-muted">
                   {resumableJobId && !searchLoading ? "Interrupted at " : ""}
-                  Tile {Math.min(searchProgress.tileIndex + 1, searchProgress.tileCount)}/
-                  {searchProgress.tileCount} · step {searchProgress.completedSteps}/
-                  {searchProgress.totalSteps} ·{" "}
+                  Tile {Math.min((searchProgress.tileIndex || 0) + 1, searchProgress.tileCount || 1)}/
+                  {searchProgress.tileCount || 0} · step {searchProgress.completedSteps || 0}/
+                  {searchProgress.totalSteps || 0} ·{" "}
                   {Math.max(allResults.length, searchProgress.filteredCount || 0)} leads
+                  {searchLoading ? ` · ${searchElapsedSec}s` : ""}
                 </span>
                 <span className="font-medium text-purple-600 dark:text-purple-400">
-                  {searchProgress.progress}%
+                  {searchProgress.progress > 0 && searchProgress.progress < 1
+                    ? `${searchProgress.progress}%`
+                    : `${searchProgress.progress || 0}%`}
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
                 <div
                   className="h-full rounded-full bg-linear-to-r from-purple-600 to-blue-600 transition-all duration-300"
-                  style={{ width: `${Math.max(searchProgress.progress, 2)}%` }}
+                  style={{
+                    width: `${Math.max(
+                      searchProgress.progress || 0,
+                      searchProgress.completedSteps > 0 ? 1 : searchLoading ? 2 : 0,
+                      2
+                    )}%`,
+                  }}
                 />
               </div>
               <p className="text-xs admin-text-muted">
                 {resumableJobId && !searchLoading
                   ? "Connection dropped or the tab was closed. Click Resume to continue from this progress."
-                  : "Querying OpenStreetMap tile-by-tile. Progress updates every few seconds."}
+                  : searchProgress.completedSteps === 0
+                    ? "Contacting OpenStreetMap… the first tile/filter can take 15–30s. Progress updates after each step."
+                    : searchProgress.currentFilterLabel
+                      ? `Querying “${searchProgress.currentFilterLabel}”. Full-city scans often stay near 0% and 0 leads for a while — that is normal.`
+                      : "Querying OpenStreetMap tile-by-tile. Early steps often find 0 emails; leads usually appear later."}
               </p>
             </div>
           )}

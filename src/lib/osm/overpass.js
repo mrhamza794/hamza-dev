@@ -7,10 +7,11 @@ const OVERPASS_URLS = [
   "https://overpass-api.de/api/interpreter",
 ];
 
-const CHUNK_DELAY_MS = 800;
-const MAX_RETRIES = 6;
-const QUERY_TIMEOUT_SEC = 25;
-const REQUEST_TIMEOUT_MS = 35_000;
+const CHUNK_DELAY_MS = 400;
+const MAX_RETRIES = 2;
+const QUERY_TIMEOUT_SEC = 20;
+const REQUEST_TIMEOUT_MS = 25_000;
+const WILDCARD_REQUEST_TIMEOUT_MS = 28_000;
 
 function tagSelector(key, value) {
   if (value === null || value === undefined) {
@@ -36,7 +37,7 @@ function isWildcardFilterSet(filterSets) {
 
 function buildQuery(bbox, filterSets) {
   const area = bboxClause(bbox);
-  const queryTimeout = isWildcardFilterSet(filterSets) ? 90 : QUERY_TIMEOUT_SEC;
+  const queryTimeout = isWildcardFilterSet(filterSets) ? 25 : QUERY_TIMEOUT_SEC;
   const lines = filterSets.flatMap((filters) => {
     const tagClause = buildFilterClause(filters);
     return [
@@ -145,7 +146,9 @@ async function runOverpassQuery(query, attempt = 0, requestTimeoutMs = REQUEST_T
 export async function queryTileFilterSets(bbox, filterSets) {
   if (!bbox || filterSets.length === 0) return [];
   const query = buildQuery(bbox, filterSets);
-  const requestTimeoutMs = isWildcardFilterSet(filterSets) ? 70_000 : REQUEST_TIMEOUT_MS;
+  const requestTimeoutMs = isWildcardFilterSet(filterSets)
+    ? WILDCARD_REQUEST_TIMEOUT_MS
+    : REQUEST_TIMEOUT_MS;
   return runOverpassQuery(query, 0, requestTimeoutMs);
 }
 
