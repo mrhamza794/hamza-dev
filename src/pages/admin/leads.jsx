@@ -11,6 +11,7 @@ import {
   Trash2,
   Mail,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { COUNTRIES } from "@/lib/osm/countries";
 import { ALL_TYPES_ID, BUSINESS_TYPES } from "@/lib/osm/businessTypes";
@@ -27,6 +28,7 @@ import DeleteConfirmModal from "@/components/admin/DeleteConfirmModal";
 
 const TABS = ["Search", "Saved leads"];
 const EMAIL_BATCH_SIZE = 25;
+const OSM_JOB_STORAGE_KEY = "osm-search-job-id";
 
 const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c.code, label: c.name }));
 
@@ -36,6 +38,31 @@ const BUSINESS_TYPE_OPTIONS = [
     a.label.localeCompare(b.label)
   ),
 ];
+
+function readStoredJobId() {
+  try {
+    return sessionStorage.getItem(OSM_JOB_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredJobId(id) {
+  try {
+    if (id) sessionStorage.setItem(OSM_JOB_STORAGE_KEY, id);
+    else sessionStorage.removeItem(OSM_JOB_STORAGE_KEY);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function isTerminalJobStatus(status) {
+  return status === "complete" || status === "failed" || status === "cancelled";
+}
+
+function isResumableJob(job) {
+  return Boolean(job?.id && job.status === "running");
+}
 
 export default function LeadsPage() {
   const [activeTab, setActiveTab] = useState("Search");
@@ -57,6 +84,7 @@ export default function LeadsPage() {
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [saveMsg, setSaveMsg] = useState("");
   const [saveLoading, setSaveLoading] = useState(false);
+  const [resumableJobId, setResumableJobId] = useState(null);
 
   // Saved leads state
   const [savedData, setSavedData] = useState(null);
@@ -80,6 +108,12 @@ export default function LeadsPage() {
   const suggestTimer = useRef(null);
   const searchAbortRef = useRef(false);
   const activeJobIdRef = useRef(null);
+  const prevJobIdRef = useRef(null);
+  const allResultsRef = useRef([]);
+
+  useEffect(() => {
+    allResultsRef.current = allResults;
+  }, [allResults]);
 
   const leadKey = (lead) => `${lead.osmType}-${lead.osmId}`;
 
@@ -111,108 +145,326 @@ export default function LeadsPage() {
     return () => clearTimeout(suggestTimer.current);
   }, [cityQuery, countryCode, selectedPlace?.displayName]);
 
-  const runSearch = useCallback(async () => {
-      if (!selectedPlace?.bbox) {
-        setSearchError("Select a city or region from the suggestions (full area will be searched).");
-        return;
+  const applyJobToUi = useCallback((job, { preserveExisting = true } = {}) => {
+    if (!job) return;
+
+    const prev = allResultsRef.current;
+    const next = Array.isArray(job.items) ? job.items : [];
+    let merged = next;
+
+    if (preserveExisting) {
+      if (
+        next.length === 0 &&
+        prev.length > 0 &&
+        job.status === "running" &&
+        (!job.id || !prevJobIdRef.current || job.id === prevJobIdRef.current)
+      ) {
+        merged = prev;
+      } else if (next.length === 0) {
+        merged = prev.length && job.status === "running" ? prev : next;
+      } else if (prev.length > 0) {
+        const map = new Map();
+        for (const lead of prev) map.set(leadKey(lead), lead);
+        for (const lead of next) map.set(leadKey(lead), lead);
+        merged = Array.from(map.values());
       }
+    }
 
-      searchAbortRef.current = false;
-      setSearchLoading(true);
-      setSearchError("");
-      setSaveMsg("");
-      setSearchProgress(null);
-      setAllResults([]);
-      setSearchMeta(null);
+    allResultsRef.current = merged;
+    const filteredCount = Math.max(
+      merged.length,
+      job.filteredCount || 0,
+      job.matchedCount || 0
+    );
+    const synced = { ...job, filteredCount, items: merged };
 
-      try {
-        const createRes = await fetch("/api/admin/osm/jobs", {
+    setAllResults(merged);
+    setSearchProgress(synced);
+    setSearchMeta(synced);
+    if (job.id) prevJobIdRef.current = job.id;
+  }, []);
+
+  const markJobInterrupted = useCallback((jobId, job, message) => {
+    if (!jobId) return;
+    writeStoredJobId(jobId);
+    setResumableJobId(jobId);
+    if (job) applyJobToUi(job);
+    setSearchError(
+      message
+        ? `${message} Search interrupted — you can resume.`
+        : "Search interrupted — you can resume."
+    );
+  }, [applyJobToUi]);
+
+  const clearPersistedJob = useCallback(() => {
+    writeStoredJobId(null);
+    setResumableJobId(null);
+  }, []);
+
+  const tickJobUntilDone = useCallback(
+    async (initialJob) => {
+      let job = initialJob;
+      const jobId = job.id;
+
+      activeJobIdRef.current = jobId;
+      writeStoredJobId(jobId);
+      setResumableJobId(null);
+      applyJobToUi(job);
+
+      while (job.status === "running" && !searchAbortRef.current) {
+        const tickRes = await fetch(`/api/admin/osm/jobs/${jobId}`, {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            bbox: selectedPlace.bbox,
-            lat: selectedPlace.lat,
-            lon: selectedPlace.lon,
-            placeType: selectedPlace.placeType,
-            businessTypeId,
-            placeName: selectedPlace.displayName,
-            country: selectedPlace.country,
-            countryCode: selectedPlace.countryCode || countryCode,
-            region: selectedPlace.region,
-            city: selectedPlace.city,
-          }),
         });
-        const createData = await createRes.json();
-        if (!createData.success) throw new Error(createData.error || "Search failed to start");
+        const tickData = await tickRes.json();
+        if (!tickData.success) throw new Error(tickData.error || "Search step failed");
 
-        let job = createData.data;
-        activeJobIdRef.current = job.id;
-        setSearchProgress(job);
-        setAllResults(job.items || []);
-        setSearchMeta(job);
+        job = tickData.data;
+        applyJobToUi(job);
 
-        while (
-          (job.status === "running" || job.completedSteps < job.totalSteps) &&
-          job.status !== "complete" &&
-          job.status !== "failed" &&
-          job.status !== "cancelled" &&
-          !searchAbortRef.current
-        ) {
-          const tickRes = await fetch(`/api/admin/osm/jobs/${job.id}`, {
-            method: "POST",
-            credentials: "include",
-          });
-          const tickData = await tickRes.json();
-          if (!tickData.success) throw new Error(tickData.error || "Search step failed");
+        if (isTerminalJobStatus(job.status)) break;
+      }
 
-          job = tickData.data;
-          setSearchProgress(job);
-          setAllResults(job.items || []);
-          setSearchMeta(job);
+      if (searchAbortRef.current && jobId) {
+        await fetch(`/api/admin/osm/jobs/${jobId}?action=cancel`, {
+          method: "POST",
+          credentials: "include",
+        });
+        clearPersistedJob();
+        setSearchError("Search cancelled.");
+        return job;
+      }
 
-          if (job.status === "complete") break;
-        }
+      if (job.status === "failed") {
+        clearPersistedJob();
+        throw new Error(job.error || "Search failed");
+      }
 
-        if (searchAbortRef.current && job.id) {
-          await fetch(`/api/admin/osm/jobs/${job.id}?action=cancel`, {
-            method: "POST",
-            credentials: "include",
-          });
-        }
-
-        if (job.status === "failed") {
-          throw new Error(job.error || "Search failed");
-        }
-
-        if (job.status === "complete" && job.filteredCount === 0) {
+      if (job.status === "complete") {
+        clearPersistedJob();
+        if (job.filteredCount === 0) {
           setSearchError(
             job.rawCount > 0
               ? "Search found businesses in this area but none have an email on OpenStreetMap."
               : "Search finished with no businesses in this area. Try a different city or business type."
           );
         }
-
         setSearchPage(1);
         setSelectedKeys(new Set());
+      }
+
+      return job;
+    },
+    [applyJobToUi, clearPersistedJob]
+  );
+
+  const resumeJob = useCallback(
+    async (jobId) => {
+      if (!jobId || searchLoading) return;
+
+      searchAbortRef.current = false;
+      setSearchLoading(true);
+      setSearchError("");
+      setSaveMsg("");
+      setResumableJobId(null);
+
+      try {
+        const getRes = await fetch(`/api/admin/osm/jobs/${jobId}`, {
+          credentials: "include",
+        });
+        const getData = await getRes.json();
+        if (!getData.success) throw new Error(getData.error || "Could not load search job");
+
+        const job = getData.data;
+
+        if (isTerminalJobStatus(job.status)) {
+          clearPersistedJob();
+          applyJobToUi(job);
+          if (job.status === "failed") {
+            throw new Error(job.error || "Search failed");
+          }
+          if (job.status === "cancelled") {
+            setSearchError("Search was cancelled.");
+          }
+          return;
+        }
+
+        if (!isResumableJob(job)) {
+          clearPersistedJob();
+          applyJobToUi(job);
+          return;
+        }
+
+        await tickJobUntilDone(job);
       } catch (err) {
-        setSearchError(err instanceof Error ? err.message : "Search failed");
-        if (!searchAbortRef.current) {
-          setAllResults([]);
-          setSearchMeta(null);
+        if (searchAbortRef.current) {
+          clearPersistedJob();
+          setSearchError("Search cancelled.");
+        } else {
+          const storedId = readStoredJobId();
+          if (storedId) {
+            markJobInterrupted(
+              storedId,
+              null,
+              err instanceof Error ? err.message : "Search failed."
+            );
+          } else {
+            setSearchError(err instanceof Error ? err.message : "Search failed");
+          }
         }
       } finally {
         setSearchLoading(false);
-        setSearchProgress(null);
         activeJobIdRef.current = null;
       }
     },
-    [selectedPlace, businessTypeId, countryCode]
+    [searchLoading, clearPersistedJob, applyJobToUi, tickJobUntilDone, markJobInterrupted]
   );
 
-  const cancelSearch = useCallback(() => {
-    searchAbortRef.current = true;
-  }, []);
+  const runSearch = useCallback(async () => {
+    if (!selectedPlace?.bbox) {
+      setSearchError("Select a city or region from the suggestions (full area will be searched).");
+      return;
+    }
+
+    searchAbortRef.current = false;
+    setSearchLoading(true);
+    setSearchError("");
+    setSaveMsg("");
+    setSearchProgress(null);
+    setAllResults([]);
+    setSearchMeta(null);
+    setResumableJobId(null);
+    prevJobIdRef.current = null;
+    allResultsRef.current = [];
+
+    const previousJobId = readStoredJobId();
+    if (previousJobId) {
+      try {
+        await fetch(`/api/admin/osm/jobs/${previousJobId}?action=cancel`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch {
+        /* best-effort abandon of previous job */
+      }
+      writeStoredJobId(null);
+    }
+
+    try {
+      const createRes = await fetch("/api/admin/osm/jobs", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bbox: selectedPlace.bbox,
+          lat: selectedPlace.lat,
+          lon: selectedPlace.lon,
+          placeType: selectedPlace.placeType,
+          businessTypeId,
+          placeName: selectedPlace.displayName,
+          country: selectedPlace.country,
+          countryCode: selectedPlace.countryCode || countryCode,
+          region: selectedPlace.region,
+          city: selectedPlace.city,
+        }),
+      });
+      const createData = await createRes.json();
+      if (!createData.success) throw new Error(createData.error || "Search failed to start");
+
+      const job = createData.data;
+      await tickJobUntilDone(job);
+    } catch (err) {
+      if (searchAbortRef.current) {
+        clearPersistedJob();
+        setSearchError("Search cancelled.");
+      } else {
+        const storedId = readStoredJobId();
+        if (storedId) {
+          markJobInterrupted(
+            storedId,
+            null,
+            err instanceof Error ? err.message : "Search failed."
+          );
+        } else {
+          setSearchError(err instanceof Error ? err.message : "Search failed");
+          setAllResults([]);
+          setSearchMeta(null);
+          setSearchProgress(null);
+        }
+      }
+    } finally {
+      setSearchLoading(false);
+      activeJobIdRef.current = null;
+    }
+  }, [selectedPlace, businessTypeId, countryCode, tickJobUntilDone, clearPersistedJob, markJobInterrupted]);
+
+  const cancelSearch = useCallback(async () => {
+    if (searchLoading) {
+      searchAbortRef.current = true;
+      return;
+    }
+
+    const id = resumableJobId || readStoredJobId();
+    if (!id) return;
+
+    try {
+      await fetch(`/api/admin/osm/jobs/${id}?action=cancel`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      /* ignore */
+    }
+
+    clearPersistedJob();
+    setSearchError("Search cancelled.");
+    setSearchProgress(null);
+  }, [searchLoading, resumableJobId, clearPersistedJob]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const recoverInterruptedJob = async () => {
+      const jobId = readStoredJobId();
+      if (!jobId) return;
+
+      try {
+        const res = await fetch(`/api/admin/osm/jobs/${jobId}`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (cancelled) return;
+
+        if (!data.success || !data.data) {
+          writeStoredJobId(null);
+          return;
+        }
+
+        const job = data.data;
+        if (isResumableJob(job)) {
+          applyJobToUi(job);
+          setResumableJobId(job.id);
+          setSearchError("Search interrupted — you can resume.");
+        } else {
+          writeStoredJobId(null);
+          if (job.status === "complete") {
+            applyJobToUi(job);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          /* keep stored id so Resume can retry later */
+          setResumableJobId(jobId);
+          setSearchError("Search interrupted — you can resume.");
+        }
+      }
+    };
+
+    recoverInterruptedJob();
+    return () => {
+      cancelled = true;
+    };
+  }, [applyJobToUi]);
 
   const searchPageItems = allResults.slice(
     (searchPage - 1) * PAGE_SIZE,
@@ -710,7 +962,17 @@ export default function LeadsPage() {
               {searchLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
               {searchLoading ? "Searching city…" : "Search full city"}
             </button>
-            {searchLoading && (
+            {resumableJobId && !searchLoading && (
+              <button
+                type="button"
+                onClick={() => resumeJob(resumableJobId)}
+                className="flex items-center gap-2 rounded-xl border border-purple-400 bg-purple-50 px-5 py-3 font-semibold text-purple-700 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
+              >
+                <RefreshCw size={18} />
+                Resume search
+              </button>
+            )}
+            {(searchLoading || resumableJobId) && (
               <button
                 type="button"
                 onClick={cancelSearch}
@@ -721,13 +983,15 @@ export default function LeadsPage() {
             )}
           </div>
 
-          {searchLoading && searchProgress && (
+          {(searchLoading || resumableJobId) && searchProgress && (
             <div className="admin-card space-y-2 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="admin-text-muted">
+                  {resumableJobId && !searchLoading ? "Interrupted at " : ""}
                   Tile {Math.min(searchProgress.tileIndex + 1, searchProgress.tileCount)}/
                   {searchProgress.tileCount} · step {searchProgress.completedSteps}/
-                  {searchProgress.totalSteps} · {searchProgress.filteredCount} leads
+                  {searchProgress.totalSteps} ·{" "}
+                  {Math.max(allResults.length, searchProgress.filteredCount || 0)} leads
                 </span>
                 <span className="font-medium text-purple-600 dark:text-purple-400">
                   {searchProgress.progress}%
@@ -740,7 +1004,9 @@ export default function LeadsPage() {
                 />
               </div>
               <p className="text-xs admin-text-muted">
-                Querying OpenStreetMap tile-by-tile. Progress updates every few seconds.
+                {resumableJobId && !searchLoading
+                  ? "Connection dropped or the tab was closed. Click Resume to continue from this progress."
+                  : "Querying OpenStreetMap tile-by-tile. Progress updates every few seconds."}
               </p>
             </div>
           )}
@@ -756,9 +1022,9 @@ export default function LeadsPage() {
             <div className="admin-card max-w-full overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10">
                 <p className="text-sm admin-text-muted">
-                  {searchMeta.filteredCount} results with email
-                  {searchMeta.rawCount > searchMeta.filteredCount &&
-                    ` (${searchMeta.rawCount} from OSM, ${searchMeta.rawCount - searchMeta.filteredCount} without email)`}{" "}
+                  {Math.max(allResults.length, searchMeta.filteredCount || 0)} results with email
+                  {searchMeta.rawCount > (searchMeta.filteredCount || 0) &&
+                    ` (${searchMeta.rawCount} from OSM, ${searchMeta.rawCount - (searchMeta.filteredCount || 0)} without email)`}{" "}
                   · {searchMeta.businessType?.label}
                 </p>
                 <div className="flex flex-wrap gap-2">

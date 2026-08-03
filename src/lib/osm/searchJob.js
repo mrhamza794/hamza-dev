@@ -1,4 +1,5 @@
 import connectDB from "@/lib/mongodb";
+import mongoose from "mongoose";
 import OsmSearchJob from "@/lib/models/OsmSearchJob";
 import OsmSearchResult from "@/lib/models/OsmSearchResult";
 import { getBusinessTypeById, getFilterSetsForSearch } from "@/lib/osm/businessTypes";
@@ -32,16 +33,43 @@ function countSteps(tiles, filterCount, chunkSize) {
   return tiles.length * Math.ceil(filterCount / chunkSize);
 }
 
-async function loadJobResults(jobId) {
-  return OsmSearchResult.find({ jobId })
-    .select("-__v -jobId -createdAt -updatedAt")
+function resolveJobObjectId(jobOrId) {
+  if (!jobOrId) return null;
+  if (jobOrId instanceof mongoose.Types.ObjectId) return jobOrId;
+
+  const raw =
+    typeof jobOrId === "object"
+      ? jobOrId._id ?? jobOrId.id
+      : jobOrId;
+
+  if (!raw) return null;
+  if (raw instanceof mongoose.Types.ObjectId) return raw;
+
+  const asString = String(raw);
+  if (!mongoose.Types.ObjectId.isValid(asString)) return null;
+  return new mongoose.Types.ObjectId(asString);
+}
+
+async function loadJobResults(jobOrId) {
+  const jobId = resolveJobObjectId(jobOrId);
+  if (!jobId) return [];
+
+  const results = await OsmSearchResult.find({
+    $or: [{ jobId }, { jobId: String(jobId) }],
+  })
+    .select("-__v -createdAt -updatedAt")
     .lean();
+
+  return results;
 }
 
 async function insertJobResults(jobId, pois) {
   if (!pois.length) return 0;
 
-  const docs = pois.map((poi) => ({ jobId, ...poi }));
+  const resolvedId = resolveJobObjectId(jobId);
+  if (!resolvedId) return 0;
+
+  const docs = pois.map((poi) => ({ jobId: resolvedId, ...poi }));
 
   try {
     const inserted = await OsmSearchResult.insertMany(docs, { ordered: false });
@@ -97,20 +125,25 @@ export async function createSearchJob(payload) {
 }
 
 export async function jobToClient(job) {
-  const items = await loadJobResults(job._id);
+  const jobId = resolveJobObjectId(job);
+  const items = await loadJobResults(jobId || job);
+  // Results were already email-filtered at insert time; keep a light sanity filter
+  // but fall back to stored docs if something odd strips fields on read.
   const filtered = filterPois(items);
+  const leads = filtered.length > 0 ? filtered : items.filter((poi) => poi?.email || poi?.companyName);
   const progress =
     job.totalSteps > 0 ? Math.round((job.completedSteps / job.totalSteps) * 100) : 0;
 
   return {
-    id: String(job._id),
+    id: String(jobId || job._id || job.id),
     status: job.status,
     progress,
     completedSteps: job.completedSteps,
     totalSteps: job.totalSteps,
     rawCount: job.rawCount,
-    filteredCount: filtered.length,
-    items: filtered,
+    matchedCount: job.matchedCount || 0,
+    filteredCount: leads.length || job.matchedCount || 0,
+    items: leads.length ? leads : items,
     businessType: { id: job.businessTypeId, label: job.businessTypeLabel },
     searchArea: job.searchArea,
     placeName: job.placeName,
