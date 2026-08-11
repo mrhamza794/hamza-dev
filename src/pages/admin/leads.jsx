@@ -1144,7 +1144,7 @@ export default function LeadsPage() {
               </div>
 
               <div className="max-w-full overflow-x-auto">
-                <table className="w-full min-w-[1100px] text-left text-sm">
+                <table className="w-full min-w-275 text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-white/10">
                       <th className="p-3">
@@ -1187,7 +1187,7 @@ export default function LeadsPage() {
                         <td className="p-3 font-medium">{lead.companyName}</td>
                         <td className="p-3 admin-text-muted">{lead.categoryLabel || lead.category || "—"}</td>
                         <td className="p-3 admin-text-muted">{lead.city || "—"}</td>
-                        <td className="p-3 admin-text-muted max-w-[180px] truncate">{lead.address || "—"}</td>
+                        <td className="p-3 admin-text-muted max-w-45 truncate">{lead.address || "—"}</td>
                         <td className="p-3 admin-text-muted">{lead.postalCode || "—"}</td>
                         <td className="p-3">{lead.phone || "—"}</td>
                         <td className="p-3 text-purple-600 dark:text-purple-400">{lead.email || "—"}</td>
@@ -1504,7 +1504,7 @@ export default function LeadsPage() {
           ) : (
             <div className="admin-card max-w-full overflow-hidden">
               <div className="max-w-full overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left text-sm">
+                <table className="w-full min-w-300 text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-white/10">
                     <th className="p-3">
@@ -1522,7 +1522,7 @@ export default function LeadsPage() {
                     <th className="p-3">Address</th>
                     <th className="p-3">Postcode</th>
                     <th className="p-3">Phone</th>
-                    <th className="p-3 min-w-[200px]">Email</th>
+                    <th className="p-3 min-w-50">Email</th>
                     <th className="p-3">Website</th>
                     <th className="p-3 w-28">Status</th>
                     <th className="p-3">Notes</th>
@@ -1546,11 +1546,11 @@ export default function LeadsPage() {
                         <div className="text-xs admin-text-muted">{lead.categoryLabel}</div>
                       </td>
                       <td className="p-3 admin-text-muted">{lead.city || "—"}</td>
-                      <td className="p-3 admin-text-muted max-w-[160px] truncate">{lead.address || "—"}</td>
+                      <td className="p-3 admin-text-muted max-w-40 truncate">{lead.address || "—"}</td>
                       <td className="p-3 admin-text-muted">{lead.postalCode || "—"}</td>
                       <td className="p-3">{lead.phone || "—"}</td>
                       <td className="p-3 text-purple-600 dark:text-purple-400">{lead.email || "—"}</td>
-                      <td className="p-3 admin-text-muted text-xs max-w-[180px] truncate">
+                      <td className="p-3 admin-text-muted text-xs max-w-45 truncate">
                         {lead.website?.trim() ? (
                           <a
                             href={websiteHref(lead.website)}
